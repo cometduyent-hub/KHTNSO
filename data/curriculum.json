@@ -1,0 +1,328 @@
+{
+  "meta": {
+    "source": "Kết nối tri thức với cuộc sống",
+    "status": "seeded",
+    "note": "Cây chương trình là dữ liệu độc lập. Các mục cần đối chiếu bản SGK gốc trước khi publish chính thức."
+  },
+  "grades": {
+    "6": {
+      "title": "KHTN 6",
+      "subject": "KHTN",
+      "chapters": [
+        {
+          "code": "P6-1",
+          "title": "Lực và chuyển động",
+          "lessons": [
+            "Lực và tác dụng của lực",
+            "Trọng lượng và lực hấp dẫn",
+            "Lực ma sát",
+            "Lực cản của nước"
+          ]
+        },
+        {
+          "code": "P6-2",
+          "title": "Năng lượng",
+          "lessons": [
+            "Năng lượng và sự truyền năng lượng",
+            "Một số dạng năng lượng",
+            "Sự chuyển hóa năng lượng"
+          ]
+        },
+        {
+          "code": "P6-3",
+          "title": "Đo lường và thực hành",
+          "lessons": [
+            "Đo chiều dài",
+            "Đo khối lượng",
+            "Đo thời gian",
+            "Đo nhiệt độ"
+          ]
+        }
+      ]
+    },
+    "7": {
+      "title": "KHTN 7",
+      "subject": "KHTN",
+      "chapters": [
+        {
+          "code": "P7-3",
+          "title": "Tốc độ",
+          "lessons": [
+            "Bài 8. Tốc độ chuyển động",
+            "Bài 9. Đo tốc độ",
+            "Bài 10. Đồ thị quãng đường – thời gian",
+            "Bài 11. Thảo luận về ảnh hưởng của tốc độ trong an toàn giao thông"
+          ]
+        },
+        {
+          "code": "P7-4",
+          "title": "Âm thanh",
+          "lessons": [
+            "Bài 12. Sóng âm",
+            "Bài 13. Độ to và độ cao của âm",
+            "Bài 14. Phản xạ âm, chống ô nhiễm tiếng ồn"
+          ]
+        },
+        {
+          "code": "P7-5",
+          "title": "Ánh sáng",
+          "lessons": [
+            "Bài 15. Năng lượng ánh sáng. Tia sáng, vùng tối",
+            "Bài 16. Sự phản xạ ánh sáng",
+            "Bài 17. Ảnh của vật qua gương phẳng"
+          ]
+        },
+        {
+          "code": "P7-6",
+          "title": "Từ",
+          "lessons": [
+            "Bài 18. Nam châm",
+            "Bài 19. Từ trường",
+            "Bài 20. Chế tạo nam châm điện đơn giản"
+          ]
+        }
+      ]
+    },
+    "8": {
+      "title": "KHTN 8",
+      "subject": "KHTN",
+      "chapters": [
+        {
+          "code": "P8-3",
+          "title": "Khối lượng riêng và áp suất",
+          "lessons": [
+            "Bài 13. Khối lượng riêng",
+            "Bài 14. Thực hành xác định khối lượng riêng",
+            "Bài 15. Áp suất trên một bề mặt",
+            "Bài 16. Áp suất chất lỏng. Áp suất khí quyển",
+            "Bài 17. Lực đẩy Archimedes"
+          ]
+        },
+        {
+          "code": "P8-4",
+          "title": "Tác dụng làm quay của lực",
+          "lessons": [
+            "Tác dụng làm quay của lực",
+            "Đòn bẩy"
+          ]
+        },
+        {
+          "code": "P8-5",
+          "title": "Điện",
+          "lessons": [
+            "Nhiễm điện do cọ xát",
+            "Dòng điện và nguồn điện",
+            "Mạch điện đơn giản",
+            "Tác dụng của dòng điện"
+          ]
+        }
+      ]
+    },
+    "9": {
+      "title": "KHTN 9",
+      "subject": "KHTN",
+      "chapters": [
+        {
+          "code": "P9-1",
+          "title": "Năng lượng cơ học",
+          "lessons": [
+            "Công và công suất",
+            "Động năng và thế năng",
+            "Cơ năng"
+          ]
+        },
+        {
+          "code": "P9-2",
+          "title": "Điện",
+          "lessons": [
+            "Công và công suất điện",
+            "Định luật Ohm",
+            "Đoạn mạch nối tiếp và song song",
+            "Điện năng"
+          ]
+        },
+        {
+          "code": "P9-3",
+          "title": "Điện từ",
+          "lessons": [
+            "Nam châm điện",
+            "Cảm ứng điện từ",
+            "Dòng điện xoay chiều"
+          ]
+        },
+        {
+          "code": "P9-4",
+          "title": "Ánh sáng",
+          "lessons": [
+            "Khúc xạ ánh sáng",
+            "Thấu kính",
+            "Màu sắc của vật"
+          ]
+        }
+      ]
+    },
+    "10": {
+      "title": "Vật lí 10",
+      "subject": "Vật lí",
+      "chapters": [
+        {
+          "code": "10-1",
+          "title": "Mở đầu",
+          "lessons": [
+            "Bài 1. Làm quen với Vật lí",
+            "Bài 2. Các quy tắc an toàn trong phòng thực hành Vật lí",
+            "Bài 3. Thực hành tính sai số trong phép đo. Ghi kết quả đo"
+          ]
+        },
+        {
+          "code": "10-2",
+          "title": "Động học",
+          "lessons": [
+            "Bài 4. Độ dịch chuyển và quãng đường đi được",
+            "Bài 5. Tốc độ và vận tốc",
+            "Bài 6. Thực hành: Đo tốc độ của vật chuyển động",
+            "Bài 7. Đồ thị độ dịch chuyển – thời gian",
+            "Bài 8. Chuyển động biến đổi. Gia tốc",
+            "Bài 9. Chuyển động thẳng biến đổi đều"
+          ]
+        },
+        {
+          "code": "10-4",
+          "title": "Năng lượng, công, công suất",
+          "lessons": [
+            "Bài 23. Năng lượng. Công cơ học",
+            "Bài 24. Công suất",
+            "Bài 25. Động năng, thế năng",
+            "Bài 26. Cơ năng và định luật bảo toàn cơ năng",
+            "Bài 27. Hiệu suất"
+          ]
+        },
+        {
+          "code": "10-5",
+          "title": "Động lượng",
+          "lessons": [
+            "Bài 28. Động lượng",
+            "Bài 29. Định luật bảo toàn động lượng",
+            "Bài 30. Thực hành: Xác định động lượng của vật trước và sau va chạm"
+          ]
+        },
+        {
+          "code": "10-6",
+          "title": "Chuyển động tròn",
+          "lessons": [
+            "Bài 31. Động học của chuyển động tròn đều",
+            "Bài 32. Lực hướng tâm và gia tốc hướng tâm"
+          ]
+        },
+        {
+          "code": "10-7",
+          "title": "Biến dạng của vật rắn. Áp suất chất lỏng",
+          "lessons": [
+            "Bài 33. Biến dạng của vật rắn",
+            "Bài 34. Khối lượng riêng. Áp suất chất lỏng"
+          ]
+        }
+      ]
+    },
+    "11": {
+      "title": "Vật lí 11",
+      "subject": "Vật lí",
+      "chapters": [
+        {
+          "code": "11-1",
+          "title": "Dao động",
+          "lessons": [
+            "Bài 1. Mô tả dao động điều hòa",
+            "Bài 2. Vận tốc, gia tốc trong dao động điều hòa",
+            "Bài 3. Bài tập về dao động điều hòa",
+            "Bài 4. Động năng. Thế năng. Sự chuyển hóa năng lượng",
+            "Bài 5. Dao động tắt dần. Dao động cưỡng bức. Hiện tượng cộng hưởng",
+            "Bài 6. Bài tập về sự chuyển năng lượng trong dao động điều hòa"
+          ]
+        },
+        {
+          "code": "11-2",
+          "title": "Sóng",
+          "lessons": [
+            "Sóng cơ",
+            "Các đặc trưng của sóng",
+            "Giao thoa sóng",
+            "Sóng dừng"
+          ]
+        },
+        {
+          "code": "11-3",
+          "title": "Điện trường",
+          "lessons": [
+            "Điện trường",
+            "Cường độ điện trường",
+            "Điện thế và thế năng điện"
+          ]
+        },
+        {
+          "code": "11-4",
+          "title": "Dòng điện",
+          "lessons": [
+            "Dòng điện không đổi",
+            "Nguồn điện",
+            "Mạch điện",
+            "Định luật Ohm"
+          ]
+        }
+      ]
+    },
+    "12": {
+      "title": "Vật lí 12",
+      "subject": "Vật lí",
+      "chapters": [
+        {
+          "code": "12-1",
+          "title": "Vật lí nhiệt",
+          "lessons": [
+            "Bài 1. Cấu trúc của chất. Sự chuyển thể",
+            "Bài 2. Nội năng. Định luật I của nhiệt động lực học",
+            "Bài 3. Nhiệt độ. Thang nhiệt độ – nhiệt kế",
+            "Bài 4. Nhiệt dung riêng",
+            "Bài 5. Nhiệt nóng chảy riêng",
+            "Bài 6. Nhiệt hóa hơi riêng",
+            "Bài 7. Bài tập vật lí nhiệt"
+          ]
+        },
+        {
+          "code": "12-2",
+          "title": "Khí lí tưởng",
+          "lessons": [
+            "Bài 8. Mô hình động học phân tử chất khí",
+            "Bài 9. Định luật Boyle",
+            "Bài 10. Định luật Charles",
+            "Bài 11. Phương trình trạng thái khí lí tưởng",
+            "Bài 12. Bài tập về khí lí tưởng",
+            "Bài 13. Áp suất khí theo mô hình động học phân tử. Động năng phân tử và nhiệt độ"
+          ]
+        },
+        {
+          "code": "12-3",
+          "title": "Từ trường",
+          "lessons": [
+            "Bài 14. Từ trường",
+            "Bài 15. Lực từ tác dụng lên dây dẫn mang dòng điện. Cảm ứng từ",
+            "Bài 16. Từ thông. Hiện tượng cảm ứng điện từ",
+            "Bài 17. Đàn ghi ta điện. Máy biến áp",
+            "Bài 18. Máy phát điện xoay chiều",
+            "Bài 19. Điện từ trường. Mô hình sóng điện từ"
+          ]
+        },
+        {
+          "code": "12-4",
+          "title": "Vật lí hạt nhân",
+          "lessons": [
+            "Bài 20. Cấu trúc hạt nhân",
+            "Bài 21. Phản ứng hạt nhân và năng lượng liên kết",
+            "Bài 22. Hiện tượng phóng xạ",
+            "Bài 23. Công nghiệp hạt nhân"
+          ]
+        }
+      ]
+    }
+  }
+}

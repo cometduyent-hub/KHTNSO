@@ -1,0 +1,4 @@
+import curriculum from '../../data/curriculum.json'; import resources from '../../data/resources.json';
+export const grades=Object.keys(curriculum.grades); export const rooms=[['Thư viện','/library','SGK, SBT, video và học liệu'],['Thực hành 3D','/practice','Dụng cụ đo, bảng số liệu, báo cáo'],['Thí nghiệm','/simulations','Mô phỏng + liên kết nguồn chính thức'],['Đề thi','/exams','Ma trận, trộn đề, thi, chấm, Review'],['Chinh phục đỉnh cao','/game','5 cấp × 30 vòng'],['Sáng tạo','/creative','GeoGebra, AI, đồ thị, thiết kế'],['Chat & Diễn đàn','/chat','Kênh lớp và trao đổi có kiểm duyệt']];
+export {curriculum,resources};
+export function lessonsForGrade(g:string){const x=(curriculum.grades as any)[g]; return x?.chapters?.flatMap((c:any)=>c.lessons.map((title:string,i:number)=>({id:`${g}-${c.code}-${i+1}`,grade:g,chapter:c.title,title})) )??[];}

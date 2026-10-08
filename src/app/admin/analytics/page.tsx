@@ -1,0 +1,1 @@
+export default function Page(){return <main className="max-w-6xl mx-auto px-5 py-10"><h1 className="text-4xl font-black">CMS · Thống kê</h1><div className="card mt-8"><p className="text-slate-600">Điểm theo lớp · câu sai nhiều · thời gian làm bài · tỷ lệ hoàn thành · hoạt động thư viện/thực hành/game.</p></div></main>}

@@ -1,0 +1,1 @@
+import './globals.css'; import Shell from '@/components/Shell'; export const metadata={title:'KHTNSo.edu.vn | KHTN SỐ',description:'Nền tảng Học tập & Thực hành 3D'}; export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="vi"><body><Shell>{children}</Shell></body></html>}

@@ -1,0 +1,7 @@
+'use client';
+import {useState} from 'react';
+import {useRouter} from 'next/navigation';
+import {supabase} from '@/lib/supabase';
+export default function Login(){const [account,setAccount]=useState('');const [password,setPassword]=useState('');const [msg,setMsg]=useState('');const router=useRouter();
+ async function submit(e:React.FormEvent){e.preventDefault();setMsg('');if(!supabase){setMsg('Chưa cấu hình Supabase. Hãy điền NEXT_PUBLIC_SUPABASE_URL và NEXT_PUBLIC_SUPABASE_ANON_KEY.');return}const {data,error}=await supabase.auth.signInWithPassword({email:account,password});if(error){setMsg(error.message);return}const {data:profile}=await supabase.from('profiles').select('role').eq('id',data.user.id).maybeSingle();const role=profile?.role||data.user?.user_metadata?.role;if(role==='admin'||role==='teacher')router.push('/admin');else router.push('/library')}
+ return <main className="max-w-md mx-auto px-5 py-16"><form onSubmit={submit} className="card"><h1 className="text-3xl font-black">Đăng nhập KHTN SỐ</h1><p className="text-slate-600 mt-2">Tài khoản được quản trị viên cấp.</p><input required value={account} onChange={e=>setAccount(e.target.value)} className="border rounded-lg p-3 w-full mt-5" placeholder="Email / tài khoản đăng nhập"/><input required value={password} onChange={e=>setPassword(e.target.value)} className="border rounded-lg p-3 w-full mt-3" placeholder="Mật khẩu / PIN" type="password"/><button className="btn bg-sky-900 text-white mt-4 w-full">Đăng nhập</button>{msg&&<p className="mt-4 text-red-600 text-sm">{msg}</p>}</form></main>}

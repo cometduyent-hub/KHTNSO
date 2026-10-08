@@ -1,0 +1,1 @@
+export default function Page(){return <main className="max-w-6xl mx-auto px-5 py-10"><h1 className="text-4xl font-black">CMS · Người dùng</h1><div className="card mt-8"><p className="text-slate-600">Nhập Excel theo lớp/khối · cấp lại PIN · khóa tài khoản · phân quyền Admin/Giáo viên/Học sinh.</p></div></main>}

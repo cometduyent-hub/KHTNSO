@@ -1,0 +1,1 @@
+export async function GET(){return Response.json({ok:true,app:'KHTNSo.edu.vn',version:'2.0.0',time:new Date().toISOString()})}

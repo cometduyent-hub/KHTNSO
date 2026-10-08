@@ -1,0 +1,29 @@
+[
+  {
+    "id": "sim-phet",
+    "title": "PhET – Physics",
+    "grade": "6-12",
+    "type": "simulation",
+    "url": "https://phet.colorado.edu/vi/simulations/filter?subjects=physics",
+    "rights": "external-link",
+    "note": "Chỉ lưu metadata và liên kết nguồn chính thức."
+  },
+  {
+    "id": "geogebra",
+    "title": "GeoGebra",
+    "grade": "6-12",
+    "type": "creative",
+    "url": "https://www.geogebra.org/",
+    "rights": "external-link",
+    "note": "Công cụ đồ thị/mô hình hóa."
+  },
+  {
+    "id": "autograph",
+    "title": "AutoGraph",
+    "grade": "7-12",
+    "type": "creative",
+    "url": "https://www.autograph-maths.com/",
+    "rights": "external-link",
+    "note": "Liên kết công cụ bên ngoài; admin kiểm duyệt trước khi công bố."
+  }
+]
