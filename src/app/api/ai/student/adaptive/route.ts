@@ -2,9 +2,9 @@ import { errorResponse, jsonResponse, requireUser } from '@/lib/server/ai';
 
 function clamp(n:number,min=0,max=1){return Math.max(min,Math.min(max,n));}
 
-export async function POST(){
-  try{
-    const {supabase,user}=await requireUser();
+export async function POST(req: Request) {
+  try {
+    const { supabase, user } = await requireUser(req);
     const {data:attempts,error:ae}=await supabase.from('exam_attempts').select('id,exam_id,score,submitted_at,status').eq('user_id',user.id).eq('status','submitted').order('submitted_at',{ascending:false}).limit(30);
     if(ae) throw ae;
     if(!attempts?.length) return jsonResponse({ok:false,error:'NO_ATTEMPTS',message:'Chưa có bài thi đã nộp để xây dựng lộ trình.'},422);
