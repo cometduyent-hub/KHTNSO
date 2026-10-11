@@ -1,29 +1,17 @@
 [
-  {
-    "id": "sim-phet",
-    "title": "PhET – Physics",
-    "grade": "6-12",
-    "type": "simulation",
-    "url": "https://phet.colorado.edu/vi/simulations/filter?subjects=physics",
-    "rights": "external-link",
-    "note": "Chỉ lưu metadata và liên kết nguồn chính thức."
-  },
-  {
-    "id": "geogebra",
-    "title": "GeoGebra",
-    "grade": "6-12",
-    "type": "creative",
-    "url": "https://www.geogebra.org/",
-    "rights": "external-link",
-    "note": "Công cụ đồ thị/mô hình hóa."
-  },
-  {
-    "id": "autograph",
-    "title": "AutoGraph",
-    "grade": "7-12",
-    "type": "creative",
-    "url": "https://www.autograph-maths.com/",
-    "rights": "external-link",
-    "note": "Liên kết công cụ bên ngoài; admin kiểm duyệt trước khi công bố."
-  }
+  {"id":"sim-phet-physics","title":"PhET – Mô phỏng Vật lí","grade":"6-12","type":"simulation","url":"https://phet.colorado.edu/vi/simulations/filter?subjects=physics","rights":"external-link","note":"Danh mục mô phỏng Vật lí từ nguồn chính thức của University of Colorado Boulder."},
+  {"id":"sim-phet-circuit","title":"PhET – Lắp mạch điện một chiều","grade":"8-12","type":"simulation","url":"https://phet.colorado.edu/en/simulations/circuit-construction-kit-dc","rights":"external-link","note":"Lắp nguồn điện, dây dẫn, bóng đèn và khảo sát mạch điện."},
+  {"id":"sim-phet-geometric-optics","title":"PhET – Quang hình học","grade":"7-12","type":"simulation","url":"https://phet.colorado.edu/en/simulations/geometric-optics","rights":"external-link","note":"Khảo sát đường truyền tia sáng qua thấu kính và hệ quang học."},
+  {"id":"sim-phet-bending-light","title":"PhET – Khúc xạ ánh sáng","grade":"7-12","type":"simulation","url":"https://phet.colorado.edu/en/simulations/bending-light","rights":"external-link","note":"Quan sát phản xạ, khúc xạ và mối liên hệ giữa góc tới, góc khúc xạ."},
+  {"id":"sim-phet-faraday","title":"PhET – Định luật Faraday","grade":"9-12","type":"simulation","url":"https://phet.colorado.edu/en/simulations/faradays-law","rights":"external-link","note":"Khảo sát cảm ứng điện từ bằng nam châm, cuộn dây và từ thông."},
+  {"id":"sim-phyphox","title":"phyphox – Thí nghiệm bằng cảm biến điện thoại","grade":"8-12","type":"simulation","url":"https://phyphox.org/","rights":"external-link","note":"Thực hiện thí nghiệm đo lường bằng cảm biến điện thoại; cần kiểm tra thiết bị và hướng dẫn an toàn."},
+  {"id":"sim-falstad","title":"CircuitJS / Falstad – Mạch điện ảo","grade":"8-12","type":"simulation","url":"https://falstad.com/circuit/","rights":"external-link","note":"Mô phỏng mạch điện tương tác trên trình duyệt."},
+  {"id":"sim-tinkercad","title":"Tinkercad Circuits – Lắp mạch điện","grade":"8-12","type":"simulation","url":"https://www.tinkercad.com/circuits","rights":"external-link","note":"Mô phỏng mạch điện và vi điều khiển; có thể cần tài khoản."},
+  {"id":"creative-geogebra","title":"GeoGebra","grade":"6-12","type":"creative","url":"https://www.geogebra.org/","rights":"external-link","note":"Công cụ đồ thị, hình học và mô hình hóa."},
+  {"id":"creative-autograph","title":"AutoGraph","grade":"7-12","type":"creative","url":"https://www.autograph-maths.com/","rights":"external-link","note":"Công cụ đồ thị và phân tích dữ liệu; admin kiểm tra quyền truy cập trước khi hướng dẫn học sinh."},
+  {"id":"creative-gamma","title":"Gamma – Bài trình chiếu","grade":"6-12","type":"creative","url":"https://gamma.app/","rights":"external-link","note":"Tạo bản trình chiếu và tài liệu từ dàn ý."},
+  {"id":"creative-canva","title":"Canva – Thiết kế và video","grade":"6-12","type":"creative","url":"https://www.canva.com/","rights":"external-link","note":"Thiết kế infographic, phiếu học tập, poster và video."},
+  {"id":"creative-circuitjs","title":"CircuitJS / Falstad","grade":"8-12","type":"creative","url":"https://falstad.com/circuit/","rights":"external-link","note":"Thiết kế và mô phỏng sơ đồ mạch điện."},
+  {"id":"creative-capcut","title":"CapCut – Biên tập video","grade":"6-12","type":"creative","url":"https://www.capcut.com/","rights":"external-link","note":"Biên tập video học tập; chú ý quyền riêng tư và quyền sử dụng hình ảnh."},
+  {"id":"creative-diagrams","title":"diagrams.net – Sơ đồ","grade":"6-12","type":"creative","url":"https://app.diagrams.net/","rights":"external-link","note":"Vẽ sơ đồ mạch, sơ đồ khối và quy trình."}
 ]
