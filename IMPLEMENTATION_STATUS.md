@@ -39,3 +39,9 @@
 - Full npm build: not run successfully (dependency installation timed out).
 - Supabase integration: not run; no access to user's production project.
 - Do not describe this package as production-certified until the checks above pass.
+
+## V11+ bổ sung trong gói này (2026-10-13)
+
+- Exam Builder: thêm lọc ngân hàng theo khối lớp/dạng câu, tìm kiếm nội dung, chọn/bỏ chọn toàn bộ kết quả lọc, tổng hợp số câu và tổng điểm, kiểm tra thời điểm mở/đóng đề, thông báo lỗi tải dữ liệu rõ hơn và nút tải lại.
+- Exam Builder: nếu thêm câu vào đề thất bại sau khi tạo bản ghi đề, cố gắng xóa bản ghi nháp vừa tạo để tránh để lại đề rỗng; thêm tìm kiếm đề hiện có và thao tác xóa đề có xác nhận.
+- Lưu ý: không thay đổi schema hay route hiện có. Các thao tác vẫn chịu quyền/RLS của Supabase; chưa được kiểm thử với dự án Supabase production của người dùng.
