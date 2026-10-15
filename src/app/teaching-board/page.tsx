@@ -8,13 +8,13 @@ import {
 } from 'lucide-react';
 
 type Point = { x: number; y: number };
-type Tool = 'select' | 'pen' | 'eraser' | 'line' | 'arrow' | 'text';
+type Tool = 'select' | 'pen' | 'eraser' | 'line' | 'arrow' | 'text' | 'graph';
 type Diagram = 'convex-lens' | 'concave-lens' | 'prism' | 'dispersion' | 'mirror' | 'circuit' | 'force-vector' | 'refraction' | 'graph-st' | 'graph-vt' | 'graph-uv' | 'graph-function' | 'harmonic' | 'unit-circle' | 'battery' | 'resistor' | 'lamp' | 'switch' | 'ammeter' | 'voltmeter' | 'wire';
 type BoardItem =
   | { id: string; kind: 'path'; points: Point[]; color: string; width: number; erase?: boolean }
   | { id: string; kind: 'line' | 'arrow'; from: Point; to: Point; color: string; width: number }
   | { id: string; kind: 'text'; at: Point; text: string; color: string; size: number }
-  | { id: string; kind: 'diagram'; diagram: Diagram; at: Point; scale: number; equation?: string };
+  | { id: string; kind: 'diagram'; diagram: Diagram; at: Point; scale: number; rotation?: number; equation?: string; switchClosed?: boolean };
 
 type Formula = { group: string; name: string; expression: string; note: string };
 const W = 1200, H = 700;
@@ -55,16 +55,20 @@ function label(ctx: CanvasRenderingContext2D, text: string, x: number, y: number
 }
 type BoardSettings = { focalLength:number; objectDistance:number; prismAngle:number; incidentAngle:number; refractiveIndex:number; refractionDirection:string; objectHeight:number; graphXMax:number; graphYMax:number; graphStep:number; graphMode:string; amplitude:number; omega:number; phase:number };
 function drawDiagram(ctx: CanvasRenderingContext2D, item: Extract<BoardItem, {kind:'diagram'}>, settings:BoardSettings) {
-  ctx.save(); ctx.translate(item.at.x, item.at.y); ctx.scale(item.scale, item.scale);
+  ctx.save(); ctx.translate(item.at.x, item.at.y); ctx.rotate((item.rotation||0)*Math.PI/180); ctx.scale(item.scale, item.scale);
   const blue = '#2563eb', red = '#dc2626', purple = '#7c3aed', gray = '#475569', green = '#059669';
   ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   if (item.diagram === 'convex-lens' || item.diagram === 'concave-lens') {
     const convex=item.diagram==='convex-lens';
     ctx.strokeStyle = blue; ctx.fillStyle = 'rgba(125,211,252,.2)'; ctx.beginPath();
-    if (convex) { ctx.moveTo(0,-95); ctx.bezierCurveTo(36,-58,36,58,0,95); ctx.bezierCurveTo(-36,58,-36,-58,0,-95); }
-    else { ctx.moveTo(0,-95); ctx.bezierCurveTo(-15,-55,-15,55,0,95); ctx.bezierCurveTo(15,55,15,-55,0,-95); }
+    if (convex) { ctx.moveTo(0,-95); ctx.bezierCurveTo(42,-60,42,60,0,95); ctx.bezierCurveTo(-42,60,-42,-60,0,-95); }
+    else { ctx.moveTo(0,-95); ctx.bezierCurveTo(-23,-60,-23,60,0,95); ctx.bezierCurveTo(23,60,23,-60,0,-95); }
     ctx.closePath(); ctx.fill(); ctx.stroke();
+    // Standard 2D lens symbol: principal axis and characteristic arrowheads.
     ctx.strokeStyle = gray; ctx.setLineDash([6,5]); ctx.beginPath(); ctx.moveTo(-260,0); ctx.lineTo(260,0); ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle=blue;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,-95);ctx.lineTo(0,95);ctx.stroke();
+    if(convex){arrow(ctx,{x:-17,y:-58},{x:0,y:-80},blue,2.5,9);arrow(ctx,{x:17,y:58},{x:0,y:80},blue,2.5,9);}else{arrow(ctx,{x:0,y:-80},{x:-17,y:-58},blue,2.5,9);arrow(ctx,{x:0,y:80},{x:17,y:58},blue,2.5,9);}
+    label(ctx,convex?'Thấu kính hội tụ':'Thấu kính phân kỳ',-90,-108,blue,15);
     const f=Math.max(25,Math.min(150,settings.focalLength)); const d=Math.max(30,Math.min(240,settings.objectDistance));
     const objectX=-Math.min(230,d*0.72), objectH=-Math.max(20,Math.min(100,settings.objectHeight)), imageD=convex?(Math.abs(d-f)<3?180:(d*f/(d-f))):-(d*f/(d+f));
     const imageX=convex?Math.max(20,Math.min(235,imageD*0.72)):Math.max(20,Math.min(220,Math.abs(imageD)*0.72));
@@ -81,14 +85,14 @@ function drawDiagram(ctx: CanvasRenderingContext2D, item: Extract<BoardItem, {ki
     label(ctx,`${convex?'Hội tụ':'Phân kỳ'} · f=${settings.focalLength} cm · d=${settings.objectDistance} cm`,-235,135,blue,15);
   } else if (item.diagram === 'prism' || item.diagram === 'dispersion') {
     ctx.rotate(settings.prismAngle*Math.PI/180);
-    ctx.strokeStyle = purple; ctx.fillStyle = 'rgba(196,181,253,.24)'; ctx.beginPath(); ctx.moveTo(-70,-70); ctx.lineTo(70,-70); ctx.lineTo(0,75); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = purple; ctx.fillStyle = 'rgba(196,181,253,.24)'; ctx.beginPath(); ctx.moveTo(0,-88); ctx.lineTo(-82,65); ctx.lineTo(82,65); ctx.closePath(); ctx.fill(); ctx.stroke();
     // Incident beam enters the left face; emergent rays bend toward the prism base.
-    arrow(ctx,{x:-235,y:-28},{x:-65,y:-28},red,3,11);
-    ctx.strokeStyle=red;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-65,-28);ctx.lineTo(0,12);ctx.stroke();
-    if(item.diagram==='prism') arrow(ctx,{x:0,y:12},{x:220,y:82},red,3,11);
+    arrow(ctx,{x:-235,y:-8},{x:-52,y:-8},red,3,11);
+    ctx.strokeStyle=red;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-52,-8);ctx.lineTo(0,18);ctx.stroke();
+    if(item.diagram==='prism') arrow(ctx,{x:0,y:18},{x:220,y:92},red,3,11);
     else {
       const colors=['#dc2626','#f97316','#eab308','#16a34a','#2563eb','#4f46e5','#9333ea'];
-      colors.forEach((c,i)=>{const y=36+i*12;arrow(ctx,{x:0,y:12},{x:220,y},c,2.5,9);});
+      colors.forEach((c,i)=>{const y=45+i*9;arrow(ctx,{x:0,y:18},{x:220,y:y+25},c,2.5,9);});
       label(ctx,'Đỏ · lệch ít',225,36,colors[0],13);label(ctx,'Tím · lệch nhiều',225,118,colors[6],13);
     }
     label(ctx,`Lăng kính · xoay ${settings.prismAngle}°`,-220,145,gray,15);
@@ -96,7 +100,20 @@ function drawDiagram(ctx: CanvasRenderingContext2D, item: Extract<BoardItem, {ki
     ctx.strokeStyle = gray; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(0,-105); ctx.lineTo(0,105); ctx.stroke();
     ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.setLineDash([5,5]); ctx.beginPath(); ctx.moveTo(-220,0); ctx.lineTo(220,0); ctx.stroke(); ctx.setLineDash([]);
     if (item.diagram === 'mirror') { arrow(ctx,{x:-145,y:-95},{x:0,y:0},red,3,12); arrow(ctx,{x:0,y:0},{x:-145,y:95},green,3,12); label(ctx,'i',-92,-42,red,17); label(ctx,'i′',-90,58,green,17); label(ctx,'Gương phẳng',15,-85,gray,16); }
-    else { ctx.fillStyle='rgba(125,211,252,.18)';ctx.fillRect(-220,0,440,120); const i=settings.incidentAngle*Math.PI/180; const n1=settings.refractionDirection==='water-air'?settings.refractiveIndex:1,n2=settings.refractionDirection==='water-air'?1:settings.refractiveIndex; const ratio=n1*Math.sin(i)/n2; const tir=Math.abs(ratio)>1; const r=tir?i:Math.asin(Math.max(-.999,Math.min(.999,ratio))); const endX=180*Math.sin(r),endY=180*Math.cos(r); arrow(ctx,{x:-180*Math.sin(i),y:-180*Math.cos(i)},{x:0,y:0},red,3,12); if(tir){arrow(ctx,{x:0,y:0},{x:180*Math.sin(i),y:-180*Math.cos(i)},green,3,12);label(ctx,'Phản xạ toàn phần',18,-35,green,14);}else arrow(ctx,{x:0,y:0},{x:endX,y:endY},green,3,12); ctx.strokeStyle=gray;ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(0,-120);ctx.lineTo(0,120);ctx.stroke();ctx.setLineDash([]);label(ctx,`i=${settings.incidentAngle}°`, -145,-90,red,15);label(ctx,`r≈${(r*180/Math.PI).toFixed(1)}°`,15,55,green,15);label(ctx,'Không khí',-205,-72,gray,16);label(ctx,settings.refractionDirection==='water-air'?'Nước → không khí':'Không khí → nước',-205,95,gray,14);label(ctx,`n₂=${n2.toFixed(2)}`,-205,115,gray,14); }
+    else {
+      const waterBelow=settings.refractionDirection==='water-air';
+      ctx.fillStyle='rgba(125,211,252,.22)';ctx.fillRect(-220,waterBelow?0:-120,440,120);
+      label(ctx,waterBelow?'Không khí':'Nước',-205,-82,gray,16);label(ctx,waterBelow?'Nước':'Không khí',-205,105,gray,16);
+      const i=settings.incidentAngle*Math.PI/180;const n1=waterBelow?settings.refractiveIndex:1,n2=waterBelow?1:settings.refractiveIndex;const ratio=n1*Math.sin(i)/n2;const tir=Math.abs(ratio)>1;const r=tir?i:Math.asin(Math.max(-.999,Math.min(.999,ratio)));
+      const sign=waterBelow?1:-1;
+      // Incoming ray travels toward the interface from the source medium; transmitted ray continues into the other medium.
+      arrow(ctx,{x:-180*Math.sin(i),y:sign*180*Math.cos(i)},{x:0,y:0},red,3,12);
+      if(tir){arrow(ctx,{x:0,y:0},{x:180*Math.sin(i),y:sign*180*Math.cos(i)},green,3,12);label(ctx,'Phản xạ toàn phần',18,sign*35,green,14);}
+      else arrow(ctx,{x:0,y:0},{x:180*Math.sin(r),y:-sign*180*Math.cos(r)},green,3,12);
+      ctx.strokeStyle=gray;ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(0,-120);ctx.lineTo(0,120);ctx.stroke();ctx.setLineDash([]);
+      label(ctx,`i=${settings.incidentAngle}°`,-145,sign*90,red,15);label(ctx,`r≈${(r*180/Math.PI).toFixed(1)}°`,15,-sign*55,green,15);
+      label(ctx,waterBelow?'Tia sáng: nước → không khí':'Tia sáng: không khí → nước',-205,145,gray,14);label(ctx,`n₂=${n2.toFixed(2)}`,-205,165,gray,14);
+    }
   } else if (item.diagram === 'circuit') {
     ctx.strokeStyle = gray; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-150,-65);ctx.lineTo(150,-65);ctx.lineTo(150,65);ctx.lineTo(-150,65);ctx.lineTo(-150,-65);ctx.stroke();
     // Cell symbol
@@ -123,7 +140,7 @@ function drawDiagram(ctx: CanvasRenderingContext2D, item: Extract<BoardItem, {ki
     if(item.diagram==='battery'){ctx.beginPath();ctx.moveTo(-55,0);ctx.lineTo(-12,0);ctx.moveTo(-12,-28);ctx.lineTo(-12,28);ctx.moveTo(12,-16);ctx.lineTo(12,16);ctx.moveTo(12,0);ctx.lineTo(55,0);ctx.stroke();label(ctx,'+',-5,-36,red,18);label(ctx,'−',-25,35,blue,18);label(ctx,'Nguồn điện',-60,58,gray,14);}
     else if(item.diagram==='resistor'){ctx.beginPath();ctx.moveTo(-75,0);ctx.lineTo(-35,0);ctx.rect(-35,-16,70,32);ctx.moveTo(35,0);ctx.lineTo(75,0);ctx.stroke();label(ctx,'R',-5,6,gray,16);}
     else if(item.diagram==='lamp'){ctx.beginPath();ctx.arc(0,0,28,0,Math.PI*2);ctx.moveTo(-20,-20);ctx.lineTo(20,20);ctx.moveTo(20,-20);ctx.lineTo(-20,20);ctx.stroke();label(ctx,'Đèn',-22,52,gray,14);}
-    else if(item.diagram==='switch'){ctx.beginPath();ctx.moveTo(-65,0);ctx.lineTo(-15,0);ctx.arc(0,0,15,Math.PI,0,true);ctx.moveTo(0,-15);ctx.lineTo(48,-35);ctx.moveTo(48,-35);ctx.lineTo(65,-35);ctx.stroke();label(ctx,'Khóa K',-30,42,gray,14);}
+    else if(item.diagram==='switch'){const closed=!!item.switchClosed;ctx.beginPath();ctx.moveTo(-65,0);ctx.lineTo(-15,0);ctx.moveTo(15,0);ctx.lineTo(65,0);ctx.moveTo(-15,0);ctx.lineTo(closed?15:48,closed?0:-35);ctx.stroke();label(ctx,closed?'K đóng':'K mở',-30,42,gray,14);}
     else if(item.diagram==='ammeter'||item.diagram==='voltmeter'){ctx.beginPath();ctx.arc(0,0,32,0,Math.PI*2);ctx.stroke();label(ctx,item.diagram==='ammeter'?'A':'V',-8,7,blue,20);label(ctx,item.diagram==='ammeter'?'Ampe kế':'Vôn kế',-38,55,gray,14);}
     else {ctx.beginPath();ctx.moveTo(-90,0);ctx.lineTo(90,0);ctx.stroke();label(ctx,'Dây nối',-30,25,gray,14);}
   } else if (item.diagram === 'force-vector') {
@@ -145,7 +162,7 @@ export default function TeachingBoard() {
   const [tool, setTool] = useState<Tool>('pen');
   const [color, setColor] = useState('#172554');
   const [lineWidth, setLineWidth] = useState(4);
-  const [grid, setGrid] = useState(false);
+  const [grid, setGrid] = useState(true);
   const [paper, setPaper] = useState<'white'|'dark'|'green'>('white');
   const [formulaSearch, setFormulaSearch] = useState('');
   const [equationInput, setEquationInput] = useState('2*x+1');
@@ -205,6 +222,7 @@ export default function TeachingBoard() {
   const pointerUp=(e:React.PointerEvent<HTMLCanvasElement>)=>{
     if(!pointerDownRef.current)return;pointerDownRef.current=false;if(dragRef.current){dragRef.current=null;setRedoItems([]);return;}const p=pointFromEvent(e);const pts=activeRef.current||[];activeRef.current=null;if(!pts.length)return;
     if(tool==='pen'||tool==='eraser')setItems(old=>[...old,{id:uid(),kind:'path',points:[...pts,p],color,width:lineWidth,erase:tool==='eraser'}]);
+    else if(tool==='graph'){const all=[...pts,p];const simplified=all.filter((q,i)=>i===0||i===all.length-1||i%Math.max(1,Math.floor(all.length/4))===0);const unique=simplified.length>=2?simplified:[all[0],p];const eq=unique.slice(1).map((q,i)=>{const a=unique[i],dx=q.x-a.x,dy=q.y-a.y;if(Math.abs(dx)<8)return `đoạn ${i+1}: t ≈ ${((a.x+q.x)/2).toFixed(0)} (đứng)`;const m=-dy/dx,b=a.y*-1-m*a.x;const trend=Math.abs(m)<0.08?'ngang':m>0?'xiên tăng':'xiên giảm';return `đoạn ${i+1} (${trend}): s ≈ ${m.toFixed(2)}t ${b>=0?'+':'−'} ${Math.abs(b).toFixed(1)}`;}).join(' ; ');setItems(old=>[...old,{id:uid(),kind:'path',points:all,color,width:Math.max(3,lineWidth),erase:false},{id:uid(),kind:'text',at:{x:Math.min(...all.map(q=>q.x)),y:Math.min(H-25,Math.max(...all.map(q=>q.y))+28)},text:`Đồ thị vẽ tay — ${eq}`,color,size:16}]);setMessage('Đã tạo đồ thị vẽ tay và phương trình xấp xỉ từng đoạn theo tọa độ bảng. Đây là phương trình xấp xỉ trên bảng, chưa tự quy đổi theo thang số vật lý.');}
     else if(tool==='line'||tool==='arrow'){const start=pts[0];setItems(old=>[...old,{id:uid(),kind:tool,from:start,to:p,color,width:lineWidth}]);}
     setRedoItems([]);setMessage(tool==='eraser'?'Đã tẩy nét.':'Đã ghi lên bảng.');
   };
@@ -233,7 +251,7 @@ export default function TeachingBoard() {
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
         <section className="min-w-0 overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-lg">
           <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 p-3 sm:p-4">
-            {toolBtn('select','Chọn / di chuyển',Hand)}{toolBtn('pen','Bút viết',Pencil)}{toolBtn('eraser','Tẩy',Eraser)}{toolBtn('line','Đoạn thẳng',Minus)}{toolBtn('arrow','Véc tơ / mũi tên',ArrowUpRight)}{toolBtn('text','Chữ',Type)}
+            {toolBtn('select','Chọn / di chuyển',Hand)}{toolBtn('pen','Bút viết',Pencil)}{toolBtn('eraser','Tẩy',Eraser)}{toolBtn('line','Đoạn thẳng',Minus)}{toolBtn('arrow','Véc tơ / mũi tên',ArrowUpRight)}{toolBtn('text','Chữ',Type)}{toolBtn('graph','Đồ thị tay',Pencil)}
             <div className="mx-1 hidden h-8 w-px bg-slate-200 sm:block"/><label title="Màu nét" className="flex items-center gap-2 rounded-xl border border-slate-200 px-2 py-1.5 text-xs font-bold">Màu <input type="color" value={color} onChange={e=>setColor(e.target.value)} className="h-7 w-8 cursor-pointer border-0 bg-transparent"/></label>
             <label className="flex min-w-28 items-center gap-2 rounded-xl border border-slate-200 px-2 py-1.5 text-xs font-bold">Nét <input aria-label="Độ dày nét" type="range" min="1" max="14" value={lineWidth} onChange={e=>setLineWidth(Number(e.target.value))} className="w-16 accent-blue-600"/>{lineWidth}</label>
             <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold"><input type="checkbox" checked={grid} onChange={e=>setGrid(e.target.checked)} className="accent-blue-600"/>Lưới</label>
@@ -243,11 +261,12 @@ export default function TeachingBoard() {
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-4 py-3"><p aria-live="polite" className="text-sm text-slate-600">{message}</p><div className="flex gap-2"><button onClick={()=>window.print()} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold hover:bg-slate-50"><Printer className="mr-1 inline" size={15}/>In bảng</button><button onClick={saveBoard} className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-bold text-white hover:bg-blue-700"><Save className="mr-1 inline" size={15}/>Lưu tiến trình</button></div></div>
         </section>
         <aside className="space-y-4">
-          <section className="rounded-3xl border border-cyan-100 bg-white p-4 shadow-lg"><h2 className="text-lg font-black">Điều khiển mô phỏng</h2><p className="mt-1 text-xs text-slate-500">Thay đổi tham số rồi chèn hình tương ứng để minh họa theo ý giáo viên.</p>
+          <section className="rounded-3xl border border-cyan-100 bg-white p-4 shadow-lg"><h2 className="text-lg font-black">Điều khiển mô phỏng</h2>
+            {selectedId && items.some(it=>it.id===selectedId&&it.kind==='diagram') && <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50 p-3"><h3 className="text-sm font-black text-blue-900">Xoay / chỉnh đối tượng đang chọn</h3><label className="mt-2 block text-xs font-bold">Góc xoay: {Math.round((items.find(it=>it.id===selectedId&&it.kind==='diagram') as Extract<BoardItem,{kind:'diagram'}>)?.rotation||0)}°<input className="w-full accent-blue-600" type="range" min="0" max="360" value={Math.round((items.find(it=>it.id===selectedId&&it.kind==='diagram') as Extract<BoardItem,{kind:'diagram'}>)?.rotation||0)} onChange={e=>setItems(old=>old.map(it=>it.id===selectedId&&it.kind==='diagram'?{...it,rotation:Number(e.target.value)}:it))}/></label><div className="mt-2 flex gap-2"><button onClick={()=>setItems(old=>old.map(it=>it.id===selectedId&&it.kind==='diagram'?{...it,rotation:((it.rotation||0)+15)%360}:it))} className="rounded-lg border bg-white px-3 py-1 text-xs font-bold">+15°</button><button onClick={()=>setItems(old=>old.map(it=>it.id===selectedId&&it.kind==='diagram'?{...it,rotation:0}:it))} className="rounded-lg border bg-white px-3 py-1 text-xs font-bold">Đặt lại 0°</button>{items.some(it=>it.id===selectedId&&it.kind==='diagram'&&it.diagram==='switch')&&<button onClick={()=>setItems(old=>old.map(it=>it.id===selectedId&&it.kind==='diagram'?{...it,switchClosed:!it.switchClosed}:it))} className="rounded-lg border bg-white px-3 py-1 text-xs font-bold">Đổi K mở/đóng</button>}</div></div>}<p className="mt-1 text-xs text-slate-500">Thay đổi tham số rồi chèn hình tương ứng để minh họa theo ý giáo viên.</p>
             <label className="mt-3 block text-sm font-semibold">Tiêu cự thấu kính: {settings.focalLength} cm<input className="w-full accent-blue-600" type="range" min="25" max="150" value={settings.focalLength} onChange={e=>updateSetting('focalLength',Number(e.target.value))}/></label>
             <label className="mt-3 block text-sm font-semibold">Khoảng cách vật: {settings.objectDistance} cm<input className="w-full accent-blue-600" type="range" min="30" max="240" value={settings.objectDistance} onChange={e=>updateSetting('objectDistance',Number(e.target.value))}/></label>
             <label className="mt-3 block text-sm font-semibold">Chiều cao vật: {settings.objectHeight} cm<input className="w-full accent-blue-600" type="range" min="20" max="100" value={settings.objectHeight} onChange={e=>updateSetting('objectHeight',Number(e.target.value))}/></label>
-            <label className="mt-3 block text-sm font-semibold">Góc xoay lăng kính: {settings.prismAngle}°<input className="w-full accent-blue-600" type="range" min="-35" max="35" value={settings.prismAngle} onChange={e=>updateSetting('prismAngle',Number(e.target.value))}/></label>
+            <label className="mt-3 block text-sm font-semibold">Góc điều chỉnh tia trong mô phỏng: {settings.prismAngle}°<input className="w-full accent-blue-600" type="range" min="-35" max="35" value={settings.prismAngle} onChange={e=>updateSetting('prismAngle',Number(e.target.value))}/></label>
             <label className="mt-3 block text-sm font-semibold">Góc tới: {settings.incidentAngle}°<input className="w-full accent-blue-600" type="range" min="5" max="80" value={settings.incidentAngle} onChange={e=>updateSetting('incidentAngle',Number(e.target.value))}/></label>
             <label className="mt-3 block text-sm font-semibold">Chiết suất môi trường: {settings.refractiveIndex.toFixed(2)}<input className="w-full accent-blue-600" type="range" min="1.00" max="1.60" step="0.01" value={settings.refractiveIndex} onChange={e=>updateSetting('refractiveIndex',Number(e.target.value))}/></label>
             <label className="mt-3 block text-sm font-semibold">Chiều truyền ánh sáng<select className="mt-1 w-full rounded-lg border p-2" value={settings.refractionDirection} onChange={e=>updateSetting('refractionDirection',e.target.value)}><option value="air-water">Không khí → nước</option><option value="water-air">Nước → không khí</option></select></label>
