@@ -8,8 +8,8 @@ import {
 } from 'lucide-react';
 
 type Point = { x: number; y: number };
-type Tool = 'pen' | 'eraser' | 'line' | 'arrow' | 'text';
-type Diagram = 'convex-lens' | 'concave-lens' | 'prism' | 'dispersion' | 'mirror' | 'circuit' | 'force-vector' | 'refraction';
+type Tool = 'select' | 'pen' | 'eraser' | 'line' | 'arrow' | 'text';
+type Diagram = 'convex-lens' | 'concave-lens' | 'prism' | 'dispersion' | 'mirror' | 'circuit' | 'force-vector' | 'refraction' | 'graph-st' | 'graph-vt' | 'graph-uv' | 'harmonic' | 'unit-circle' | 'battery' | 'resistor' | 'lamp' | 'switch' | 'ammeter' | 'voltmeter' | 'wire';
 type BoardItem =
   | { id: string; kind: 'path'; points: Point[]; color: string; width: number; erase?: boolean }
   | { id: string; kind: 'line' | 'arrow'; from: Point; to: Point; color: string; width: number }
@@ -53,33 +53,50 @@ function arrow(ctx: CanvasRenderingContext2D, a: Point, b: Point, color: string,
 function label(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, color = '#0f172a', size = 20) {
   ctx.fillStyle = color; ctx.font = `600 ${size}px system-ui, sans-serif`; ctx.fillText(text, x, y);
 }
-function drawDiagram(ctx: CanvasRenderingContext2D, item: Extract<BoardItem, {kind:'diagram'}>) {
+type BoardSettings = { focalLength:number; objectDistance:number; prismAngle:number; incidentAngle:number; refractiveIndex:number; refractionDirection:string; objectHeight:number; graphXMax:number; graphYMax:number; graphStep:number; graphMode:string; amplitude:number; omega:number; phase:number };
+function drawDiagram(ctx: CanvasRenderingContext2D, item: Extract<BoardItem, {kind:'diagram'}>, settings:BoardSettings) {
   ctx.save(); ctx.translate(item.at.x, item.at.y); ctx.scale(item.scale, item.scale);
   const blue = '#2563eb', red = '#dc2626', purple = '#7c3aed', gray = '#475569', green = '#059669';
   ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   if (item.diagram === 'convex-lens' || item.diagram === 'concave-lens') {
+    const convex=item.diagram==='convex-lens';
     ctx.strokeStyle = blue; ctx.fillStyle = 'rgba(125,211,252,.2)'; ctx.beginPath();
-    if (item.diagram === 'convex-lens') { ctx.moveTo(0,-95); ctx.bezierCurveTo(36,-58,36,58,0,95); ctx.bezierCurveTo(-36,58,-36,-58,0,-95); }
+    if (convex) { ctx.moveTo(0,-95); ctx.bezierCurveTo(36,-58,36,58,0,95); ctx.bezierCurveTo(-36,58,-36,-58,0,-95); }
     else { ctx.moveTo(0,-95); ctx.bezierCurveTo(-15,-55,-15,55,0,95); ctx.bezierCurveTo(15,55,15,-55,0,-95); }
-    ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.strokeStyle = gray; ctx.setLineDash([6,5]); ctx.beginPath(); ctx.moveTo(-220,0); ctx.lineTo(220,0); ctx.stroke(); ctx.setLineDash([]);
-    arrow(ctx,{x:-170,y:-48},{x:-2,y:-48},red,3,11); arrow(ctx,{x:2,y:-48},{x:170,y:-85},red,3,11); label(ctx,item.diagram === 'convex-lens'?'Thấu kính hội tụ':'Thấu kính phân kỳ',-205,125,blue,18);
-    label(ctx,'O',7,20,gray,15); label(ctx,'F',-112,20,gray,15); label(ctx,'F′',105,20,gray,15);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = gray; ctx.setLineDash([6,5]); ctx.beginPath(); ctx.moveTo(-260,0); ctx.lineTo(260,0); ctx.stroke(); ctx.setLineDash([]);
+    const f=Math.max(25,Math.min(150,settings.focalLength)); const d=Math.max(30,Math.min(240,settings.objectDistance));
+    const objectX=-Math.min(230,d*0.72), objectH=-Math.max(20,Math.min(100,settings.objectHeight)), imageD=convex?(Math.abs(d-f)<3?180:(d*f/(d-f))):-(d*f/(d+f));
+    const imageX=convex?Math.max(20,Math.min(235,imageD*0.72)):Math.max(20,Math.min(220,Math.abs(imageD)*0.72));
+    // Object and image arrows
+    arrow(ctx,{x:objectX,y:0},{x:objectX,y:objectH},red,3,10); label(ctx,'Vật',objectX-20,objectH-10,red,15);
+    if(convex && d>f+3){const hi=objectH*(imageD/d);arrow(ctx,{x:imageX,y:0},{x:imageX,y:Math.max(-120,Math.min(120,-hi))},green,3,10);label(ctx,'Ảnh thật',imageX-22,Math.max(-120,Math.min(120,-hi))-10,green,14);}
+    else if(!convex || d<f-3){const hi=convex?objectH*Math.abs(imageD/d):objectH*Math.abs(imageD/d);arrow(ctx,{x:-imageX,y:0},{x:-imageX,y:Math.max(-110,hi)},green,3,10);label(ctx,'Ảnh ảo',-imageX-22,Math.max(-110,hi)+22,green,14);}
+    // principal rays from object tip
+    const tip={x:objectX,y:objectH};
+    ctx.strokeStyle=red;ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(tip.x,tip.y);ctx.lineTo(0,tip.y);ctx.lineTo(230,convex?tip.y*(1-230/Math.max(40,f*0.72)):tip.y+230*0.2);ctx.stroke();
+    ctx.strokeStyle=green;ctx.beginPath();ctx.moveTo(tip.x,tip.y);ctx.lineTo(0,0);ctx.lineTo(230,tip.y*(230/Math.max(40,f*0.72)));ctx.stroke();
+    ctx.fillStyle=gray;ctx.beginPath();ctx.arc(-f*0.72,0,4,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(f*0.72,0,4,0,Math.PI*2);ctx.fill();
+    label(ctx,'F',-f*0.72-7,20,gray,15);label(ctx,'F′',f*0.72-7,20,gray,15);label(ctx,'O',7,20,gray,15);
+    label(ctx,`${convex?'Hội tụ':'Phân kỳ'} · f=${settings.focalLength} cm · d=${settings.objectDistance} cm`,-235,135,blue,15);
   } else if (item.diagram === 'prism' || item.diagram === 'dispersion') {
+    ctx.rotate(settings.prismAngle*Math.PI/180);
     ctx.strokeStyle = purple; ctx.fillStyle = 'rgba(196,181,253,.24)'; ctx.beginPath(); ctx.moveTo(-70,-70); ctx.lineTo(70,-70); ctx.lineTo(0,75); ctx.closePath(); ctx.fill(); ctx.stroke();
-    // The prism base is at the bottom; refracted/emergent rays bend toward the base.
-    arrow(ctx,{x:-220,y:-20},{x:-72,y:-20},red,3,11); ctx.strokeStyle = red; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-72,-20); ctx.lineTo(4,5); ctx.stroke();
-    if (item.diagram === 'prism') arrow(ctx,{x:4,y:5},{x:220,y:65},red,3,11);
+    // Incident beam enters the left face; emergent rays bend toward the prism base.
+    arrow(ctx,{x:-235,y:-28},{x:-65,y:-28},red,3,11);
+    ctx.strokeStyle=red;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-65,-28);ctx.lineTo(0,12);ctx.stroke();
+    if(item.diagram==='prism') arrow(ctx,{x:0,y:12},{x:220,y:82},red,3,11);
     else {
-      const colors = ['#dc2626','#f97316','#eab308','#16a34a','#2563eb','#4f46e5','#9333ea'];
-      colors.forEach((c,i)=>arrow(ctx,{x:4,y:5},{x:220,y:35+i*10},c,2.4,9));
-      label(ctx,'Đỏ',226,34,colors[0],14); label(ctx,'Tím',226,112,colors[6],14);
+      const colors=['#dc2626','#f97316','#eab308','#16a34a','#2563eb','#4f46e5','#9333ea'];
+      colors.forEach((c,i)=>{const y=36+i*12;arrow(ctx,{x:0,y:12},{x:220,y},c,2.5,9);});
+      label(ctx,'Đỏ · lệch ít',225,36,colors[0],13);label(ctx,'Tím · lệch nhiều',225,118,colors[6],13);
     }
-    label(ctx,item.diagram === 'prism'?'Lăng kính · tia lệch về phía đáy':'Tán sắc ánh sáng trắng · đỏ lệch ít, tím lệch nhiều',-220,132,gray,16);
+    label(ctx,`Lăng kính · xoay ${settings.prismAngle}°`,-220,145,gray,15);
   } else if (item.diagram === 'mirror' || item.diagram === 'refraction') {
     ctx.strokeStyle = gray; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(0,-105); ctx.lineTo(0,105); ctx.stroke();
     ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.setLineDash([5,5]); ctx.beginPath(); ctx.moveTo(-220,0); ctx.lineTo(220,0); ctx.stroke(); ctx.setLineDash([]);
     if (item.diagram === 'mirror') { arrow(ctx,{x:-145,y:-95},{x:0,y:0},red,3,12); arrow(ctx,{x:0,y:0},{x:-145,y:95},green,3,12); label(ctx,'i',-92,-42,red,17); label(ctx,'i′',-90,58,green,17); label(ctx,'Gương phẳng',15,-85,gray,16); }
-    else { ctx.fillStyle='rgba(125,211,252,.18)';ctx.fillRect(-220,0,440,120);arrow(ctx,{x:-145,y:-95},{x:0,y:0},red,3,12);arrow(ctx,{x:0,y:0},{x:125,y:88},green,3,12);label(ctx,'Không khí',-205,-72,gray,16);label(ctx,'Môi trường thứ hai',15,115,gray,16); }
+    else { ctx.fillStyle='rgba(125,211,252,.18)';ctx.fillRect(-220,0,440,120); const i=settings.incidentAngle*Math.PI/180; const n1=settings.refractionDirection==='water-air'?settings.refractiveIndex:1,n2=settings.refractionDirection==='water-air'?1:settings.refractiveIndex; const ratio=n1*Math.sin(i)/n2; const tir=Math.abs(ratio)>1; const r=tir?i:Math.asin(Math.max(-.999,Math.min(.999,ratio))); const endX=180*Math.sin(r),endY=180*Math.cos(r); arrow(ctx,{x:-180*Math.sin(i),y:-180*Math.cos(i)},{x:0,y:0},red,3,12); if(tir){arrow(ctx,{x:0,y:0},{x:180*Math.sin(i),y:-180*Math.cos(i)},green,3,12);label(ctx,'Phản xạ toàn phần',18,-35,green,14);}else arrow(ctx,{x:0,y:0},{x:endX,y:endY},green,3,12); ctx.strokeStyle=gray;ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(0,-120);ctx.lineTo(0,120);ctx.stroke();ctx.setLineDash([]);label(ctx,`i=${settings.incidentAngle}°`, -145,-90,red,15);label(ctx,`r≈${(r*180/Math.PI).toFixed(1)}°`,15,55,green,15);label(ctx,'Không khí',-205,-72,gray,16);label(ctx,settings.refractionDirection==='water-air'?'Nước → không khí':'Không khí → nước',-205,95,gray,14);label(ctx,`n₂=${n2.toFixed(2)}`,-205,115,gray,14); }
   } else if (item.diagram === 'circuit') {
     ctx.strokeStyle = gray; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-150,-65);ctx.lineTo(150,-65);ctx.lineTo(150,65);ctx.lineTo(-150,65);ctx.lineTo(-150,-65);ctx.stroke();
     // Cell symbol
@@ -88,6 +105,26 @@ function drawDiagram(ctx: CanvasRenderingContext2D, item: Extract<BoardItem, {ki
     ctx.strokeStyle=gray;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(15,-65);ctx.lineTo(15,-85);ctx.lineTo(70,-85);ctx.lineTo(70,-45);ctx.lineTo(15,-45);ctx.lineTo(15,-65);ctx.stroke();
     ctx.beginPath();ctx.arc(150,0,20,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(136,-14);ctx.lineTo(164,14);ctx.moveTo(164,-14);ctx.lineTo(136,14);ctx.stroke();
     label(ctx,'Nguồn',-205,105,red,16);label(ctx,'R',34,-93,gray,16);label(ctx,'Đèn',175,7,gray,16);label(ctx,'Sơ đồ mạch điện kín',-85,130,blue,17);
+  } else if (item.diagram.startsWith('graph-')) {
+    const left=-220,top=-115,w=430,h=220;ctx.strokeStyle='#cbd5e1';ctx.lineWidth=1;
+    for(let x=0;x<=w;x+=Math.max(10,settings.graphStep*10)){ctx.beginPath();ctx.moveTo(left+x,top);ctx.lineTo(left+x,top+h);ctx.stroke();}
+    for(let y=0;y<=h;y+=Math.max(10,settings.graphStep*10)){ctx.beginPath();ctx.moveTo(left,top+y);ctx.lineTo(left+w,top+y);ctx.stroke();}
+    arrow(ctx,{x:left,y:top+h},{x:left+w+15,y:top+h},gray,2,9);arrow(ctx,{x:left,y:top+h},{x:left,y:top-18},gray,2,9);
+    const xmax=settings.graphXMax,ymax=settings.graphYMax;ctx.strokeStyle=blue;ctx.lineWidth=3;ctx.beginPath();
+    for(let px=0;px<=w;px++){const x=px/w*xmax;let y=0;if(item.diagram==='graph-st')y=x*(ymax/xmax)*0.72;else if(item.diagram==='graph-vt')y=(x/xmax<.38?ymax*.72:x/xmax<.62?ymax*.72:Math.min(ymax,x/xmax*ymax*.8));else y=Math.min(ymax,Math.max(0,x*0.7));const py=top+h-(y/ymax)*h;if(px===0)ctx.moveTo(left+px,py);else ctx.lineTo(left+px,py);}ctx.stroke();
+    label(ctx,item.diagram==='graph-st'?'Đồ thị s–t':item.diagram==='graph-vt'?'Đồ thị v–t':'Đồ thị U–I',-150,-135,blue,17);label(ctx,item.diagram==='graph-st'?'s (m)':item.diagram==='graph-vt'?'v (m/s)':'U (V)',left-5,top-24,gray,13);label(ctx,'t (s) / I (A)',left+w-75,top+h+25,gray,13);
+    label(ctx,`Trục x: 0–${xmax} · trục y: 0–${ymax}`,-130,145,gray,13);
+  } else if (item.diagram==='harmonic' || item.diagram==='unit-circle') {
+    if(item.diagram==='unit-circle'){ctx.strokeStyle=gray;ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,100,0,Math.PI*2);ctx.stroke();ctx.strokeStyle='#cbd5e1';ctx.beginPath();ctx.moveTo(-125,0);ctx.lineTo(125,0);ctx.moveTo(0,-125);ctx.lineTo(0,125);ctx.stroke();const a=settings.phase*Math.PI/180;arrow(ctx,{x:0,y:0},{x:100*Math.cos(a),y:-100*Math.sin(a)},blue,4,12);label(ctx,`φ=${settings.phase}°`,20,-115,blue,16);label(ctx,'cos φ',35,18,red,14);label(ctx,'sin φ',-60,-55,green,14);}
+    else {ctx.strokeStyle=gray;ctx.beginPath();ctx.moveTo(-220,0);ctx.lineTo(220,0);ctx.moveTo(-210,-95);ctx.lineTo(-210,95);ctx.stroke();ctx.strokeStyle=blue;ctx.lineWidth=3;ctx.beginPath();for(let x=0;x<=420;x++){const t=x/420*2*Math.PI;const y=-settings.amplitude*25*Math.cos(settings.omega*t+settings.phase*Math.PI/180);if(x===0)ctx.moveTo(-210+x,y);else ctx.lineTo(-210+x,y);}ctx.stroke();label(ctx,`x = A cos(ωt + φ) · A=${settings.amplitude}, ω=${settings.omega}, φ=${settings.phase}°`,-215,130,blue,15);}
+  } else if (['battery','resistor','lamp','switch','ammeter','voltmeter','wire'].includes(item.diagram)) {
+    ctx.strokeStyle=gray;ctx.fillStyle='#ffffff';ctx.lineWidth=3;
+    if(item.diagram==='battery'){ctx.beginPath();ctx.moveTo(-55,0);ctx.lineTo(-12,0);ctx.moveTo(-12,-28);ctx.lineTo(-12,28);ctx.moveTo(12,-16);ctx.lineTo(12,16);ctx.moveTo(12,0);ctx.lineTo(55,0);ctx.stroke();label(ctx,'+',-5,-36,red,18);label(ctx,'−',-25,35,blue,18);label(ctx,'Nguồn điện',-60,58,gray,14);}
+    else if(item.diagram==='resistor'){ctx.beginPath();ctx.moveTo(-75,0);ctx.lineTo(-35,0);ctx.rect(-35,-16,70,32);ctx.moveTo(35,0);ctx.lineTo(75,0);ctx.stroke();label(ctx,'R',-5,6,gray,16);}
+    else if(item.diagram==='lamp'){ctx.beginPath();ctx.arc(0,0,28,0,Math.PI*2);ctx.moveTo(-20,-20);ctx.lineTo(20,20);ctx.moveTo(20,-20);ctx.lineTo(-20,20);ctx.stroke();label(ctx,'Đèn',-22,52,gray,14);}
+    else if(item.diagram==='switch'){ctx.beginPath();ctx.moveTo(-65,0);ctx.lineTo(-15,0);ctx.arc(0,0,15,Math.PI,0,true);ctx.moveTo(0,-15);ctx.lineTo(48,-35);ctx.moveTo(48,-35);ctx.lineTo(65,-35);ctx.stroke();label(ctx,'Khóa K',-30,42,gray,14);}
+    else if(item.diagram==='ammeter'||item.diagram==='voltmeter'){ctx.beginPath();ctx.arc(0,0,32,0,Math.PI*2);ctx.stroke();label(ctx,item.diagram==='ammeter'?'A':'V',-8,7,blue,20);label(ctx,item.diagram==='ammeter'?'Ampe kế':'Vôn kế',-38,55,gray,14);}
+    else {ctx.beginPath();ctx.moveTo(-90,0);ctx.lineTo(90,0);ctx.stroke();label(ctx,'Dây nối',-30,25,gray,14);}
   } else if (item.diagram === 'force-vector') {
     ctx.strokeStyle='#94a3b8';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-220,80);ctx.lineTo(220,80);ctx.moveTo(0,120);ctx.lineTo(0,-130);ctx.stroke();
     arrow(ctx,{x:0,y:0},{x:145,y:-70},blue,4,15);arrow(ctx,{x:0,y:0},{x:-90,y:-95},red,4,15);arrow(ctx,{x:0,y:0},{x:40,y:100},green,4,15);
@@ -100,6 +137,8 @@ export default function TeachingBoard() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const activeRef = useRef<Point[] | null>(null);
   const pointerDownRef = useRef(false);
+  const dragRef = useRef<{id:string;offset:Point}|null>(null);
+  const [selectedId,setSelectedId] = useState<string|null>(null);
   const [items, setItems] = useState<BoardItem[]>([]);
   const [redoItems, setRedoItems] = useState<BoardItem[][]>([]);
   const [tool, setTool] = useState<Tool>('pen');
@@ -113,6 +152,8 @@ export default function TeachingBoard() {
   const [showLibrary, setShowLibrary] = useState(true);
   const [lessonTitle, setLessonTitle] = useState('Bài học hôm nay');
   const [loaded, setLoaded] = useState(false);
+  const [settings,setSettings] = useState<BoardSettings>({focalLength:60,objectDistance:120,objectHeight:58,prismAngle:0,incidentAngle:40,refractiveIndex:1.33,refractionDirection:'air-water',graphXMax:10,graphYMax:100,graphStep:1,graphMode:'graph-st',amplitude:3,omega:1,phase:0});
+  const updateSetting=(key:keyof BoardSettings,value:number|string)=>setSettings(old=>({...old,[key]:value}));
 
   const drawScene = useCallback(() => {
     const canvas = canvasRef.current; if (!canvas) return;
@@ -135,39 +176,43 @@ export default function TeachingBoard() {
         ctx.strokeStyle=item.color;ctx.lineWidth=item.width;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(item.from.x,item.from.y);ctx.lineTo(item.to.x,item.to.y);ctx.stroke();
       } else if(item.kind==='arrow') arrow(ctx,item.from,item.to,item.color,item.width,Math.max(9,item.width*3.5));
       else if(item.kind==='text'){ctx.fillStyle=item.color;ctx.font=`600 ${item.size}px system-ui, sans-serif`;ctx.fillText(item.text,item.at.x,item.at.y);}
-      else drawDiagram(ctx,item);
+      else drawDiagram(ctx,item,settings);
+      if(item.id===selectedId && 'at' in item){ctx.save();ctx.strokeStyle='#7c3aed';ctx.lineWidth=2;ctx.setLineDash([5,4]);ctx.strokeRect(item.at.x-115,item.at.y-105,230,210);ctx.restore();}
     });
     const active=activeRef.current;
     if(active?.length){ctx.strokeStyle=tool==='eraser'?bg:color;ctx.lineWidth=tool==='eraser'?Math.max(22,lineWidth*4):lineWidth;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(active[0].x,active[0].y);active.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));ctx.stroke();}
-  },[items,grid,paper,tool,color,lineWidth]);
+  },[items,grid,paper,tool,color,lineWidth,settings,selectedId]);
   useEffect(()=>{drawScene();},[drawScene]);
   useEffect(()=>{
-    try { const raw=localStorage.getItem('khtnso-teaching-board-v2'); if(raw){const parsed=JSON.parse(raw) as {items?:BoardItem[];lessonTitle?:string};if(Array.isArray(parsed.items))setItems(parsed.items);if(parsed.lessonTitle)setLessonTitle(parsed.lessonTitle);} } catch { /* ignore old or invalid local save */ }
+    try { const raw=localStorage.getItem('khtnso-teaching-board-v2'); if(raw){const parsed=JSON.parse(raw) as {items?:BoardItem[];lessonTitle?:string;settings?:Partial<BoardSettings>};if(Array.isArray(parsed.items))setItems(parsed.items);if(parsed.lessonTitle)setLessonTitle(parsed.lessonTitle);if(parsed.settings)setSettings(old=>({...old,...parsed.settings}));} } catch { /* ignore old or invalid local save */ }
     setLoaded(true);
   },[]);
-  useEffect(()=>{if(loaded){try{localStorage.setItem('khtnso-teaching-board-v2',JSON.stringify({items,lessonTitle}));}catch{/* storage may be full */}}},[items,lessonTitle,loaded]);
+  useEffect(()=>{if(loaded){try{localStorage.setItem('khtnso-teaching-board-v2',JSON.stringify({items,lessonTitle,settings}));}catch{/* storage may be full */}}},[items,lessonTitle,settings,loaded]);
   useEffect(()=>{const resize=()=>drawScene();window.addEventListener('resize',resize);return()=>window.removeEventListener('resize',resize);},[drawScene]);
 
   const pointFromEvent = (e: React.PointerEvent<HTMLCanvasElement>): Point => {
     const r=e.currentTarget.getBoundingClientRect(); return {x:Math.max(0,Math.min(W,(e.clientX-r.left)*W/r.width)),y:Math.max(0,Math.min(H,(e.clientY-r.top)*H/r.height))};
   };
   const pointerDown=(e:React.PointerEvent<HTMLCanvasElement>)=>{
+    const p=pointFromEvent(e);
+    if(tool==='select'){const found=[...items].reverse().find(it=>'at' in it && Math.hypot(it.at.x-p.x,it.at.y-p.y)<150);if(found){setSelectedId(found.id);if('at' in found)dragRef.current={id:found.id,offset:{x:p.x-found.at.x,y:p.y-found.at.y}};else dragRef.current={id:found.id,offset:{x:0,y:0}};e.currentTarget.setPointerCapture(e.pointerId);pointerDownRef.current=true;setMessage('Đang chọn/di chuyển hình. Kéo chuột hoặc ngón tay để đặt lại vị trí.');}else{setSelectedId(null);setMessage('Chọn một hình mẫu hoặc chữ trên bảng để di chuyển.');}return;}
     if(tool==='text'){const p=pointFromEvent(e);const value=window.prompt('Nhập nội dung cần ghi lên bảng:');if(value?.trim()){setItems(old=>[...old,{id:uid(),kind:'text',at:p,text:value.trim(),color,size:26}]);setRedoItems([]);setMessage('Đã thêm chữ lên bảng.');}return;}
-    e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);pointerDownRef.current=true;const p=pointFromEvent(e);activeRef.current=[p];drawScene();
+    e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);pointerDownRef.current=true;activeRef.current=[p];drawScene();
   };
-  const pointerMove=(e:React.PointerEvent<HTMLCanvasElement>)=>{if(!pointerDownRef.current)return;const p=pointFromEvent(e);if(activeRef.current)activeRef.current=[...activeRef.current,p];drawScene();};
+  const pointerMove=(e:React.PointerEvent<HTMLCanvasElement>)=>{if(!pointerDownRef.current)return;const p=pointFromEvent(e);if(dragRef.current){const {id,offset}=dragRef.current;setItems(old=>old.map(it=>it.id===id&&'at' in it?({...it,at:{x:p.x-offset.x,y:p.y-offset.y}} as BoardItem):it));return;}if(activeRef.current)activeRef.current=[...activeRef.current,p];drawScene();};
   const pointerUp=(e:React.PointerEvent<HTMLCanvasElement>)=>{
-    if(!pointerDownRef.current)return;pointerDownRef.current=false;const p=pointFromEvent(e);const pts=activeRef.current||[];activeRef.current=null;if(!pts.length)return;
+    if(!pointerDownRef.current)return;pointerDownRef.current=false;if(dragRef.current){dragRef.current=null;setRedoItems([]);return;}const p=pointFromEvent(e);const pts=activeRef.current||[];activeRef.current=null;if(!pts.length)return;
     if(tool==='pen'||tool==='eraser')setItems(old=>[...old,{id:uid(),kind:'path',points:[...pts,p],color,width:lineWidth,erase:tool==='eraser'}]);
     else if(tool==='line'||tool==='arrow'){const start=pts[0];setItems(old=>[...old,{id:uid(),kind:tool,from:start,to:p,color,width:lineWidth}]);}
     setRedoItems([]);setMessage(tool==='eraser'?'Đã tẩy nét.':'Đã ghi lên bảng.');
   };
   const addDiagram=(diagram:Diagram)=>{setItems(old=>[...old,{id:uid(),kind:'diagram',diagram,at:{x:W/2,y:H/2},scale:1}]);setRedoItems([]);setMessage('Đã thêm hình mẫu. Có thể tiếp tục vẽ, ghi chú hoặc xóa bằng công cụ tẩy.');};
+  const addComponent=(diagram:Diagram)=>{setItems(old=>[...old,{id:uid(),kind:'diagram',diagram,at:{x:W/2,y:H/2},scale:1}]);setRedoItems([]);setMessage('Đã chèn dụng cụ riêng lẻ; tiếp tục chèn dây nối và các linh kiện để tự lắp mạch.');};
   const addFormula=(f:Formula)=>{setItems(old=>[...old,{id:uid(),kind:'text',at:{x:55,y:90+old.filter(i=>i.kind==='text').length*38},text:`${f.name}: ${f.expression}`,color,size:27}]);setRedoItems([]);setMessage(`Đã ghi công thức ${f.name} lên bảng.`);};
   const undo=()=>{setItems(old=>{if(!old.length)return old;setRedoItems(r=>[...r,old]);setMessage('Đã hoàn tác thao tác gần nhất.');return old.slice(0,-1);});};
   const redo=()=>{setRedoItems(old=>{if(!old.length)return old;const next=old[old.length-1];setItems(cur=>[...cur,next[next.length-1]]);setMessage('Đã làm lại thao tác.');return old.slice(0,-1);});};
   const clearBoard=()=>{if(!items.length)return;if(window.confirm('Xóa toàn bộ nội dung trên bảng?')){setItems([]);setRedoItems([]);setMessage('Đã xóa bảng.');}};
-  const saveBoard=()=>{try{localStorage.setItem('khtnso-teaching-board-v2',JSON.stringify({items,lessonTitle}));setMessage('Đã lưu bảng trên trình duyệt này.');}catch{setMessage('Không thể lưu vào trình duyệt; hãy xuất PNG để lưu bản vẽ.');}};
+  const saveBoard=()=>{try{localStorage.setItem('khtnso-teaching-board-v2',JSON.stringify({items,lessonTitle,settings}));setMessage('Đã lưu bảng trên trình duyệt này.');}catch{setMessage('Không thể lưu vào trình duyệt; hãy xuất PNG để lưu bản vẽ.');}};
   const exportPng=()=>{const canvas=canvasRef.current;if(!canvas)return;const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download=`${lessonTitle.trim().replace(/[^\p{L}\p{N}-]+/gu,'-')||'bang-vat-ly'}.png`;a.click();setMessage('Đã xuất ảnh PNG.');};
   const filteredFormulas=formulas.filter(f=>(classFilter==='Tất cả'||f.group.startsWith(classFilter))&&`${f.name} ${f.expression} ${f.group}`.toLowerCase().includes(formulaSearch.toLowerCase()));
   const toolBtn=(id:Tool,labelText:string,Icon:typeof Pencil)=><button key={id} onClick={()=>setTool(id)} title={labelText} aria-pressed={tool===id} className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold border transition ${tool===id?'border-blue-600 bg-blue-600 text-white shadow':'border-slate-200 bg-white text-slate-700 hover:bg-sky-50'}`}><Icon size={17}/><span className="hidden sm:inline">{labelText}</span></button>;
@@ -185,7 +230,7 @@ export default function TeachingBoard() {
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
         <section className="min-w-0 overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-lg">
           <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 p-3 sm:p-4">
-            {toolBtn('pen','Bút viết',Pencil)}{toolBtn('eraser','Tẩy',Eraser)}{toolBtn('line','Đoạn thẳng',Minus)}{toolBtn('arrow','Véc tơ / mũi tên',ArrowUpRight)}{toolBtn('text','Chữ',Type)}
+            {toolBtn('select','Chọn / di chuyển',Hand)}{toolBtn('pen','Bút viết',Pencil)}{toolBtn('eraser','Tẩy',Eraser)}{toolBtn('line','Đoạn thẳng',Minus)}{toolBtn('arrow','Véc tơ / mũi tên',ArrowUpRight)}{toolBtn('text','Chữ',Type)}
             <div className="mx-1 hidden h-8 w-px bg-slate-200 sm:block"/><label title="Màu nét" className="flex items-center gap-2 rounded-xl border border-slate-200 px-2 py-1.5 text-xs font-bold">Màu <input type="color" value={color} onChange={e=>setColor(e.target.value)} className="h-7 w-8 cursor-pointer border-0 bg-transparent"/></label>
             <label className="flex min-w-28 items-center gap-2 rounded-xl border border-slate-200 px-2 py-1.5 text-xs font-bold">Nét <input aria-label="Độ dày nét" type="range" min="1" max="14" value={lineWidth} onChange={e=>setLineWidth(Number(e.target.value))} className="w-16 accent-blue-600"/>{lineWidth}</label>
             <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold"><input type="checkbox" checked={grid} onChange={e=>setGrid(e.target.checked)} className="accent-blue-600"/>Lưới</label>
@@ -195,9 +240,25 @@ export default function TeachingBoard() {
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-4 py-3"><p aria-live="polite" className="text-sm text-slate-600">{message}</p><div className="flex gap-2"><button onClick={()=>window.print()} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold hover:bg-slate-50"><Printer className="mr-1 inline" size={15}/>In bảng</button><button onClick={saveBoard} className="rounded-xl bg-blue-600 px-3 py-2 text-sm font-bold text-white hover:bg-blue-700"><Save className="mr-1 inline" size={15}/>Lưu tiến trình</button></div></div>
         </section>
         <aside className="space-y-4">
+          <section className="rounded-3xl border border-cyan-100 bg-white p-4 shadow-lg"><h2 className="text-lg font-black">Điều khiển mô phỏng</h2><p className="mt-1 text-xs text-slate-500">Thay đổi tham số rồi chèn hình tương ứng để minh họa theo ý giáo viên.</p>
+            <label className="mt-3 block text-sm font-semibold">Tiêu cự thấu kính: {settings.focalLength} cm<input className="w-full accent-blue-600" type="range" min="25" max="150" value={settings.focalLength} onChange={e=>updateSetting('focalLength',Number(e.target.value))}/></label>
+            <label className="mt-3 block text-sm font-semibold">Khoảng cách vật: {settings.objectDistance} cm<input className="w-full accent-blue-600" type="range" min="30" max="240" value={settings.objectDistance} onChange={e=>updateSetting('objectDistance',Number(e.target.value))}/></label>
+            <label className="mt-3 block text-sm font-semibold">Chiều cao vật: {settings.objectHeight} cm<input className="w-full accent-blue-600" type="range" min="20" max="100" value={settings.objectHeight} onChange={e=>updateSetting('objectHeight',Number(e.target.value))}/></label>
+            <label className="mt-3 block text-sm font-semibold">Góc xoay lăng kính: {settings.prismAngle}°<input className="w-full accent-blue-600" type="range" min="-35" max="35" value={settings.prismAngle} onChange={e=>updateSetting('prismAngle',Number(e.target.value))}/></label>
+            <label className="mt-3 block text-sm font-semibold">Góc tới: {settings.incidentAngle}°<input className="w-full accent-blue-600" type="range" min="5" max="80" value={settings.incidentAngle} onChange={e=>updateSetting('incidentAngle',Number(e.target.value))}/></label>
+            <label className="mt-3 block text-sm font-semibold">Chiết suất môi trường: {settings.refractiveIndex.toFixed(2)}<input className="w-full accent-blue-600" type="range" min="1.00" max="1.60" step="0.01" value={settings.refractiveIndex} onChange={e=>updateSetting('refractiveIndex',Number(e.target.value))}/></label>
+            <label className="mt-3 block text-sm font-semibold">Chiều truyền ánh sáng<select className="mt-1 w-full rounded-lg border p-2" value={settings.refractionDirection} onChange={e=>updateSetting('refractionDirection',e.target.value)}><option value="air-water">Không khí → nước</option><option value="water-air">Nước → không khí</option></select></label>
+            <label className="mt-3 block text-sm font-semibold">Biên độ dao động A: {settings.amplitude}<input className="w-full accent-blue-600" type="range" min="1" max="5" value={settings.amplitude} onChange={e=>updateSetting('amplitude',Number(e.target.value))}/></label>
+            <label className="mt-3 block text-sm font-semibold">Tần số góc ω: {settings.omega}<input className="w-full accent-blue-600" type="range" min="0.5" max="3" step="0.1" value={settings.omega} onChange={e=>updateSetting('omega',Number(e.target.value))}/></label>
+            <label className="mt-3 block text-sm font-semibold">Pha ban đầu φ: {settings.phase}°<input className="w-full accent-blue-600" type="range" min="-180" max="180" value={settings.phase} onChange={e=>updateSetting('phase',Number(e.target.value))}/></label>
+            <div className="mt-4 grid grid-cols-2 gap-2">{[['graph-st','Đồ thị s–t'],['graph-vt','Đồ thị v–t'],['graph-uv','Đồ thị U–I'],['harmonic','Dao động điều hòa'],['unit-circle','Vòng tròn lượng giác']].map(([d,t])=><button key={d} onClick={()=>addComponent(d as Diagram)} className="rounded-xl border border-slate-200 p-2 text-left text-xs font-bold hover:border-blue-400 hover:bg-blue-50">{t}</button>)}</div>
+            <div className="mt-3 grid grid-cols-2 gap-2">{[['battery','Nguồn điện'],['resistor','Điện trở R'],['lamp','Bóng đèn'],['switch','Khóa K'],['ammeter','Ampe kế'],['voltmeter','Vôn kế'],['wire','Dây nối']].map(([d,t])=><button key={d} onClick={()=>addComponent(d as Diagram)} className="rounded-xl border border-slate-200 p-2 text-left text-xs font-bold hover:border-emerald-400 hover:bg-emerald-50">+ {t}</button>)}</div>
+            <div className="mt-3 grid grid-cols-2 gap-2"><label className="text-xs font-semibold">Trục x tối đa<input className="mt-1 w-full rounded-lg border p-2" type="number" min="1" max="1000" value={settings.graphXMax} onChange={e=>updateSetting('graphXMax',Math.max(1,Number(e.target.value)||1))}/></label><label className="text-xs font-semibold">Trục y tối đa<input className="mt-1 w-full rounded-lg border p-2" type="number" min="1" max="1000" value={settings.graphYMax} onChange={e=>updateSetting('graphYMax',Math.max(1,Number(e.target.value)||1))}/></label></div>
+            <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">Lưu ý: tham số điều khiển tác động lên các hình mẫu được vẽ lại; đây là công cụ minh họa giảng dạy, chưa thay thế phần mềm mô phỏng quang học/điện học định lượng chuyên dụng.</p>
+          </section>
           <section className="rounded-3xl border border-violet-100 bg-white p-4 shadow-lg"><div className="flex items-center justify-between gap-2"><div><h2 className="text-lg font-black">Hình mẫu Vật lý</h2><p className="mt-1 text-xs text-slate-500">Chèn hình vào bảng rồi viết/vẽ bổ sung.</p></div><button onClick={()=>setShowLibrary(v=>!v)} className="rounded-lg border p-2" title="Thu gọn/mở rộng thư viện">{showLibrary?<ChevronRight size={18} className="rotate-90"/>:<ChevronRight size={18}/>}</button></div>
             {showLibrary&&<div className="mt-4 grid grid-cols-2 gap-2">{[
-              ['convex-lens','Thấu kính hội tụ'],['concave-lens','Thấu kính phân kỳ'],['prism','Lăng kính'],['dispersion','Tán sắc ánh sáng'],['mirror','Phản xạ ánh sáng'],['refraction','Khúc xạ ánh sáng'],['circuit','Mạch điện cơ bản'],['force-vector','Các véc tơ lực'],
+              ['convex-lens','Thấu kính hội tụ'],['concave-lens','Thấu kính phân kỳ'],['prism','Lăng kính'],['dispersion','Tán sắc ánh sáng'],['mirror','Phản xạ ánh sáng'],['refraction','Khúc xạ ánh sáng'],['circuit','Mạch điện mẫu'],['force-vector','Các véc tơ lực'],['graph-st','Đồ thị s–t'],['graph-vt','Đồ thị v–t'],['graph-uv','Đồ thị U–I'],['harmonic','Dao động điều hòa'],['unit-circle','Vòng tròn lượng giác'],
             ].map(([d,t])=><button key={d} onClick={()=>addDiagram(d as Diagram)} className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-sky-50 p-3 text-left text-sm font-bold transition hover:border-blue-400 hover:shadow-sm"><span className="mb-2 grid h-8 w-8 place-items-center rounded-lg bg-blue-100 text-blue-700">{d==='circuit'?<Zap size={17}/>:d.includes('lens')||d==='prism'||d==='dispersion'||d==='refraction'||d==='mirror'?<Circle size={17}/>:<ArrowUpRight size={17}/>}</span>{t}<span className="mt-1 block text-xs font-normal text-slate-500">Chèn vào bảng</span></button>)}</div>}
             <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">Hình mẫu là sơ đồ giảng dạy có thể ghi chú thêm bằng bút. Với thí nghiệm định lượng, hãy đối chiếu số liệu và quy ước dấu của bài học.</p>
           </section>
