@@ -1,7 +1,7 @@
 import { errorResponse, jsonResponse, requireUser } from '@/lib/server/ai';
 export async function POST(request:Request){
  try{
-  const {supabase,user}=await requireUser(); const body=await request.json(); const setId=String(body.set_id||''); const answers=body.answers||{};
+  const {supabase,user}=await requireUser(request); const body=await request.json(); const setId=String(body.set_id||''); const answers=body.answers||{};
   const {data:set,error}=await supabase.from('personalized_practice_sets').select('id,questions,status').eq('id',setId).eq('user_id',user.id).single(); if(error) throw error;
   if(set.status==='completed') return jsonResponse({ok:false,error:'ALREADY_COMPLETED',message:'Bài luyện này đã được hoàn thành.'},409);
   const qs=Array.isArray(set.questions)?set.questions:[]; let earned=0,total=0; const details:any[]=[];

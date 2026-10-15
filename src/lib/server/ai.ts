@@ -25,7 +25,7 @@ export async function requireStaff(request: Request) {
 export async function callOpenAI(input: string, instructions: string) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error('OPENAI_NOT_CONFIGURED');
-  const model = process.env.OPENAI_MODEL || 'gpt-5.6-luna';
+  const model = process.env.OPENAI_MODEL || 'gpt-4.1-mini';
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
@@ -34,7 +34,9 @@ export async function callOpenAI(input: string, instructions: string) {
   const raw = await response.text();
   if (!response.ok) throw new Error(`OPENAI_HTTP_${response.status}:${raw.slice(0,500)}`);
   const json = JSON.parse(raw);
-  return { text: String(json.output_text || ''), response: json, model };
+  const outputText = String(json.output_text || (Array.isArray(json.output) ? json.output.flatMap((o:any)=>Array.isArray(o.content)?o.content:[]).filter((c:any)=>c.type==='output_text').map((c:any)=>c.text||'').join('\n') : '') || '').trim();
+  if (!outputText) throw new Error('OPENAI_EMPTY_RESPONSE');
+  return { text: outputText, response: json, model };
 }
 
 export function parseJsonLoose(text: string): any {
@@ -50,11 +52,11 @@ export function parseJsonLoose(text: string): any {
 export function jsonResponse(data: unknown, status = 200) { return Response.json(data, { status }); }
 export function errorResponse(error: unknown) {
   const message = error instanceof Error ? error.message : 'UNKNOWN_ERROR';
-  const map: Record<string, number> = { UNAUTHENTICATED: 401, FORBIDDEN: 403, OPENAI_NOT_CONFIGURED: 503, SUPABASE_NOT_CONFIGURED: 503, AI_INVALID_JSON: 502 };
+  const map: Record<string, number> = { UNAUTHENTICATED: 401, FORBIDDEN: 403, OPENAI_NOT_CONFIGURED: 503, SUPABASE_NOT_CONFIGURED: 503, AI_INVALID_JSON: 502, OPENAI_EMPTY_RESPONSE: 502 };
   const status = map[message] || (message.startsWith('OPENAI_HTTP_') ? 502 : 500);
   return jsonResponse({ ok: false, error: message }, status);
 }
 
 export async function logAi(supabase: any, userId: string, action: string, meta: Record<string, unknown> = {}) {
-  await supabase.from('ai_usage_logs').insert({ user_id: userId, action, model: process.env.OPENAI_MODEL || 'gpt-5.6-luna', metadata: meta });
+  await supabase.from('ai_usage_logs').insert({ user_id: userId, action, model: process.env.OPENAI_MODEL || 'gpt-4.1-mini', metadata: meta });
 }

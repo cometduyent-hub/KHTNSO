@@ -1,1 +1,1 @@
-export async function GET(){return Response.json({ok:true,app:'KHTNSo.edu.vn',version:'2.0.0',time:new Date().toISOString()})}
+export async function GET(){return Response.json({ok:true,app:'KHTNSo.edu.vn',version:'2.1.0',time:new Date().toISOString(),services:{supabaseConfigured:Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL&&process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),openAIConfigured:Boolean(process.env.OPENAI_API_KEY),openAIModel:process.env.OPENAI_MODEL||'gpt-4.1-mini',embeddingModel:process.env.OPENAI_EMBEDDING_MODEL||'text-embedding-3-small'}})}

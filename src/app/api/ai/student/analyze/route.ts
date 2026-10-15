@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     const { supabase, user } = await requireUser(request);
     const body = await request.json().catch(()=>({}));
     const requestedAttemptId = body.attemptId ? String(body.attemptId) : null;
-    let query = supabase.from('exam_attempts').select('id,exam_id,answers,work,score,submitted_at,status,violations').eq('user_id', user.id).eq('status','submitted').order('submitted_at',{ascending:false}).limit(8);
+    let query = supabase.from('exam_attempts').select('id,exam_id,answers,work,score,submitted_at,status,violations,question_order').eq('user_id', user.id).eq('status','submitted').order('submitted_at',{ascending:false}).limit(8);
     if (requestedAttemptId) query = query.eq('id', requestedAttemptId).limit(1);
     const {data: attempts,error: ae} = await query;
     if (ae) throw ae;
