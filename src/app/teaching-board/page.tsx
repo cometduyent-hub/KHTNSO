@@ -14,22 +14,34 @@ type BoardItem =
   | { id: string; kind: 'path'; points: Point[]; color: string; width: number; erase?: boolean; graph?: boolean }
   | { id: string; kind: 'line' | 'arrow'; from: Point; to: Point; color: string; width: number }
   | { id: string; kind: 'text'; at: Point; text: string; color: string; size: number; graphSourceId?: string }
-  | { id: string; kind: 'diagram'; diagram: Diagram; at: Point; scale: number; rotation?: number; equation?: string; switchClosed?: boolean };
+  | { id: string; kind: 'diagram'; diagram: Diagram; at: Point; scale: number; rotation?: number; equation?: string; switchClosed?: boolean; graphPoints?: Point[] };
 
 type Formula = { group: string; name: string; expression: string; note: string };
 const W = 1200, H = 700;
 const formulas: Formula[] = [
-  { group: 'Lớp 6–7 · Đo lường và chuyển động', name: 'Tốc độ', expression: 'v = s / t', note: 'v: tốc độ; s: quãng đường; t: thời gian' },
+  { group: 'Lớp 6–7 · Đo lường và chuyển động', name: 'Tốc độ', expression: 'v = s / t', note: 'Công thức gốc: v là tốc độ; s là quãng đường; t là thời gian' },
+  { group: 'Lớp 6–7 · Đo lường và chuyển động', name: 'Quãng đường (suy ra từ v = s / t)', expression: 's = v · t', note: 'Biến đổi công thức gốc v = s / t để tìm quãng đường' },
+  { group: 'Lớp 6–7 · Đo lường và chuyển động', name: 'Thời gian (suy ra từ v = s / t)', expression: 't = s / v', note: 'Biến đổi công thức gốc v = s / t để tìm thời gian' },
   { group: 'Lớp 6–7 · Đo lường và chuyển động', name: 'Khối lượng riêng', expression: 'D = m / V', note: 'D: khối lượng riêng; m: khối lượng; V: thể tích' },
-  { group: 'Lớp 8 · Lực và áp suất', name: 'Áp suất', expression: 'p = F / S', note: 'F vuông góc với diện tích S' },
+  { group: 'Lớp 8 · Lực và áp suất', name: 'Áp suất', expression: 'p = F / S', note: 'Công thức gốc; F vuông góc với diện tích S' },
+  { group: 'Lớp 8 · Lực và áp suất', name: 'Áp lực (suy ra từ p = F / S)', expression: 'F = p · S', note: 'Biến đổi công thức gốc p = F / S để tìm áp lực' },
+  { group: 'Lớp 8 · Lực và áp suất', name: 'Diện tích bị ép (suy ra từ p = F / S)', expression: 'S = F / p', note: 'Biến đổi công thức gốc p = F / S để tìm diện tích bị ép' },
   { group: 'Lớp 8 · Lực và áp suất', name: 'Lực đẩy Archimedes', expression: 'Fₐ = d · V', note: 'V là thể tích phần chất lỏng bị vật chiếm chỗ' },
   { group: 'Lớp 8–9 · Năng lượng', name: 'Công cơ học', expression: 'A = F · s', note: 'Khi lực cùng hướng chuyển dời' },
-  { group: 'Lớp 8–9 · Năng lượng', name: 'Công suất', expression: 'P = A / t', note: 'A: công; t: thời gian thực hiện công' },
-  { group: 'Lớp 7–9 · Điện học', name: 'Định luật Ôm', expression: 'I = U / R', note: 'I: cường độ dòng điện; U: hiệu điện thế; R: điện trở' },
+  { group: 'Lớp 8–9 · Năng lượng', name: 'Công suất', expression: 'P = A / t', note: 'Công thức gốc: A là công; t là thời gian thực hiện công' },
+  { group: 'Lớp 8–9 · Năng lượng', name: 'Công (suy ra từ P = A / t)', expression: 'A = P · t', note: 'Biến đổi công thức gốc P = A / t để tìm công' },
+  { group: 'Lớp 8–9 · Năng lượng', name: 'Thời gian (suy ra từ P = A / t)', expression: 't = A / P', note: 'Biến đổi công thức gốc P = A / t để tìm thời gian' },
+  { group: 'Lớp 7–9 · Điện học', name: 'Định luật Ôm', expression: 'I = U / R', note: 'Công thức gốc: I là cường độ dòng điện; U là hiệu điện thế; R là điện trở' },
+  { group: 'Lớp 7–9 · Điện học', name: 'Hiệu điện thế (suy ra từ I = U / R)', expression: 'U = I · R', note: 'Biến đổi công thức gốc I = U / R để tìm hiệu điện thế' },
+  { group: 'Lớp 7–9 · Điện học', name: 'Điện trở (suy ra từ I = U / R)', expression: 'R = U / I', note: 'Biến đổi công thức gốc I = U / R để tìm điện trở' },
   { group: 'Lớp 7–9 · Quang học', name: 'Định luật phản xạ', expression: 'i = i′', note: 'Góc tới bằng góc phản xạ' },
   { group: 'Lớp 9–12 · Quang học', name: 'Thấu kính mỏng', expression: '1/f = 1/d + 1/d′', note: 'Cần thống nhất quy ước dấu trong bài học' },
   { group: 'Lớp 10–12 · Cơ học', name: 'Định luật II Newton', expression: 'ΣF⃗ = m · a⃗', note: 'Gia tốc cùng hướng với hợp lực' },
   { group: 'Lớp 10–12 · Dao động', name: 'Dao động điều hòa', expression: 'x = A cos(ωt + φ)', note: 'A: biên độ; ω: tần số góc; φ: pha ban đầu' },
+  { group: 'Lớp 10–12 · Lượng giác', name: 'Hàm sin', expression: 'y = A sin(ωx + φ)', note: 'Đồ thị hình sin; góc trong sin tính bằng radian khi vẽ hàm' },
+  { group: 'Lớp 10–12 · Lượng giác', name: 'Hàm cos', expression: 'y = A cos(ωx + φ)', note: 'Đồ thị hình cos; góc trong cos tính bằng radian khi vẽ hàm' },
+  { group: 'Lớp 10–12 · Lượng giác', name: 'Hệ thức lượng giác cơ bản', expression: 'sin²α + cos²α = 1', note: 'Đúng với mọi góc α' },
+  { group: 'Lớp 10–12 · Lượng giác', name: 'Tang của góc', expression: 'tan α = sin α / cos α', note: 'Xác định khi cos α ≠ 0' },
   { group: 'Lớp 10–12 · Sóng', name: 'Tốc độ truyền sóng', expression: 'v = λf', note: 'λ: bước sóng; f: tần số' },
   { group: 'Lớp 10–12 · Điện từ', name: 'Cảm ứng điện từ', expression: 'e = −ΔΦ / Δt', note: 'Suất điện động cảm ứng theo định luật Faraday–Lenz' },
 ];
@@ -77,24 +89,26 @@ function drawDiagram(ctx: CanvasRenderingContext2D, item: Extract<BoardItem, {ki
     const magnification=Number.isFinite(imageDistance)?-imageDistance/d:(convex?-4:0);
     const imageY=-magnification*objH; // Canvas y is positive downwards: real inverted images point down.
     arrow(ctx,{x:objX,y:0},{x:objX,y:-objH},red,3,10);label(ctx,'Vật',objX-20,-objH-10,red,14);
+    // Two principal rays taught at school: (1) through optical centre O, undeviated;
+    // (2) parallel to the principal axis, then through (or apparently from) the focal point.
+    const tip={x:objX,y:-objH};
     if(Number.isFinite(imageDistance) && Math.abs(imageX)<255){
       const iy=Math.max(-125,Math.min(125,imageY));
       if(convex && d>f){arrow(ctx,{x:imageX,y:0},{x:imageX,y:iy},green,3,10);label(ctx,'Ảnh thật',imageX-22,iy+(iy<0?-10:22),green,13);}
-      else {ctx.save();ctx.setLineDash([6,4]);ctx.strokeStyle=green;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(imageX,iy);ctx.stroke();ctx.restore();arrow(ctx,{x:imageX,y:0},{x:imageX,y:iy},green,3,10);label(ctx,'Ảnh ảo',imageX-22,iy+(iy<0?-10:22),green,13);}
+      else {arrow(ctx,{x:imageX,y:0},{x:imageX,y:iy},green,3,10);label(ctx,'Ảnh ảo',imageX-22,iy+(iy<0?-10:22),green,13);}
     } else if(convex && Math.abs(d-f)<0.8){label(ctx,'Ảnh ở rất xa (d ≈ f)',80,-32,green,13);}
-    // Principal rays from the object tip. Solid rays are physical paths; dashed extensions locate virtual images.
-    const tip={x:objX,y:-objH};
-    ctx.strokeStyle=red;ctx.lineWidth=2.2;ctx.beginPath();ctx.moveTo(tip.x,tip.y);ctx.lineTo(0,tip.y);ctx.stroke();
+    // Ray 1: tip -> optical centre and continues straight on the other side.
+    ctx.strokeStyle=red;ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(tip.x,tip.y);ctx.lineTo(0,0);ctx.lineTo(245, -tip.y/Math.max(-tip.x,1)*245);ctx.stroke();
+    // Ray 2: parallel to axis up to the lens. Convex refracts through F'; concave diverges
+    // so that its backward extension passes through F on the object side.
+    ctx.strokeStyle=green;ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(tip.x,tip.y);ctx.lineTo(0,tip.y);ctx.stroke();
     if(convex){
-      if(d>f){ctx.beginPath();ctx.moveTo(0,tip.y);ctx.lineTo(Math.min(255,fPx*1.8),tip.y+(objH/fPx)*Math.min(255,fPx*1.8));ctx.stroke();}
-      else {ctx.beginPath();ctx.moveTo(0,tip.y);ctx.lineTo(255,tip.y-255*objH/Math.max(fPx,1));ctx.stroke();ctx.save();ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(0,tip.y);ctx.lineTo(-Math.min(240,Math.abs(imageX)),imageY);ctx.stroke();ctx.restore();}
+      ctx.beginPath();ctx.moveTo(0,tip.y);ctx.lineTo(245, (-tip.y/fPx)*245);ctx.stroke();
     } else {
-      ctx.beginPath();ctx.moveTo(0,tip.y);ctx.lineTo(255,tip.y+255*objH/Math.max(fPx,1));ctx.stroke();
-      ctx.save();ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(0,tip.y);ctx.lineTo(-Math.min(240,Math.abs(imageX)),imageY);ctx.stroke();ctx.restore();
+      const endX=245, slope=tip.y/fPx;
+      ctx.beginPath();ctx.moveTo(0,tip.y);ctx.lineTo(endX,tip.y+slope*endX);ctx.stroke();
+      ctx.save();ctx.setLineDash([6,5]);ctx.strokeStyle=green;ctx.beginPath();ctx.moveTo(0,tip.y);ctx.lineTo(-fPx,0);ctx.stroke();ctx.restore();
     }
-    ctx.strokeStyle=green;ctx.beginPath();ctx.moveTo(tip.x,tip.y);ctx.lineTo(0,0);ctx.stroke();
-    if(convex && d>f){ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(245,245*(objH/Math.max(d*pxPerCm,1)));ctx.stroke();}
-    else {ctx.save();ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(255,-objH*255/Math.max(d*pxPerCm,1));ctx.stroke();ctx.restore();}
     ctx.fillStyle=gray;[-fPx,fPx].forEach((x)=>{ctx.beginPath();ctx.arc(x,0,4,0,Math.PI*2);ctx.fill();});
     label(ctx,'F',-fPx-7,20,gray,14);label(ctx,'F′',fPx-7,20,gray,14);label(ctx,'O',7,20,gray,14);
     label(ctx,`${convex?'Hội tụ':'Phân kỳ'} · f=${settings.focalLength} cm · d=${settings.objectDistance} cm`,-235,142,blue,14);
@@ -132,19 +146,26 @@ function drawDiagram(ctx: CanvasRenderingContext2D, item: Extract<BoardItem, {ki
   } else if (item.diagram === 'circuit') {
     ctx.strokeStyle = gray; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-150,-65);ctx.lineTo(150,-65);ctx.lineTo(150,65);ctx.lineTo(-150,65);ctx.lineTo(-150,-65);ctx.stroke();
     // Cell symbol
-    ctx.strokeStyle=red;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-168,-23);ctx.lineTo(-132,-23);ctx.moveTo(-160,-43);ctx.lineTo(-160,-3);ctx.moveTo(-145,-35);ctx.lineTo(-145,-11);ctx.stroke();
+    ctx.strokeStyle=red;ctx.lineWidth=3.5;ctx.beginPath();ctx.moveTo(-150,-65);ctx.lineTo(-150,-24);ctx.moveTo(-168,-24);ctx.lineTo(-132,-24);ctx.moveTo(-160,-4);ctx.lineTo(-140,-4);ctx.moveTo(-150,-4);ctx.lineTo(-150,65);ctx.stroke();
     // Resistor and lamp symbol
     ctx.strokeStyle=gray;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(15,-65);ctx.lineTo(15,-85);ctx.lineTo(70,-85);ctx.lineTo(70,-45);ctx.lineTo(15,-45);ctx.lineTo(15,-65);ctx.stroke();
     ctx.beginPath();ctx.arc(150,0,20,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(136,-14);ctx.lineTo(164,14);ctx.moveTo(164,-14);ctx.lineTo(136,14);ctx.stroke();
-    label(ctx,'Nguồn',-205,105,red,16);label(ctx,'R',34,-93,gray,16);label(ctx,'Đèn',175,7,gray,16);label(ctx,'Sơ đồ mạch điện kín',-85,130,blue,17);
+    label(ctx,'+',-177,-28,red,16);label(ctx,'−',-180,2,blue,16);label(ctx,'Nguồn',-205,105,red,16);label(ctx,'R',34,-93,gray,16);label(ctx,'Đèn',175,7,gray,16);label(ctx,'Sơ đồ mạch điện kín',-85,130,blue,17);
   } else if (item.diagram.startsWith('graph-')) {
     const left=-220,top=-115,w=430,h=220;ctx.strokeStyle='#cbd5e1';ctx.lineWidth=1;
-    for(let x=0;x<=w;x+=Math.max(10,settings.graphStep*10)){ctx.beginPath();ctx.moveTo(left+x,top);ctx.lineTo(left+x,top+h);ctx.stroke();}
-    for(let y=0;y<=h;y+=Math.max(10,settings.graphStep*10)){ctx.beginPath();ctx.moveTo(left,top+y);ctx.lineTo(left+w,top+y);ctx.stroke();}
-    arrow(ctx,{x:left,y:top+h},{x:left+w+15,y:top+h},gray,2,9);arrow(ctx,{x:left,y:top+h},{x:left,y:top-18},gray,2,9);
+    // Align graph grid lines to the same 32 px board grid, including when the diagram is moved/scaled.
+    const boardGrid=32, scale=Math.max(0.01,item.scale||1);
+    const firstGlobalX=Math.ceil((item.at.x+left*scale)/boardGrid)*boardGrid;
+    for(let gx=firstGlobalX;gx<=item.at.x+(left+w)*scale;gx+=boardGrid){const x=(gx-item.at.x)/scale;if(x>=left&&x<=left+w){ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,top+h);ctx.stroke();}}
+    const firstGlobalY=Math.ceil((item.at.y+top*scale)/boardGrid)*boardGrid;
+    for(let gy=firstGlobalY;gy<=item.at.y+(top+h)*scale;gy+=boardGrid){const y=(gy-item.at.y)/scale;if(y>=top&&y<=top+h){ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(left+w,y);ctx.stroke();}}
+    const functionGraph=item.diagram==='graph-function';const axisY=functionGraph?top+h/2:top+h;
+    arrow(ctx,{x:left,y:axisY},{x:left+w+15,y:axisY},gray,2,9);arrow(ctx,{x:left,y:top+h},{x:left,y:top-18},gray,2,9);
     const xmax=settings.graphXMax,ymax=settings.graphYMax;ctx.strokeStyle=blue;ctx.lineWidth=3;ctx.beginPath();
-    const safeFunction=(x:number)=>{const expr=(item.equation||'2*x+1').replace(/\^/g,'**');if(!/^[0-9xX+*/().,\s^\-]+$/.test(expr))return NaN;try{return Function('x',`'use strict'; return (${expr.replace(/X/g,'x')});`)(x) as number;}catch{return NaN;}};
-    for(let px=0;px<=w;px++){const x=px/w*xmax;let y=0;if(item.diagram==='graph-st')y=x*(ymax/xmax)*0.72;else if(item.diagram==='graph-vt')y=(x/xmax<.38?ymax*.72:x/xmax<.62?ymax*.72:Math.min(ymax,x/xmax*ymax*.8));else if(item.diagram==='graph-uv')y=Math.min(ymax,Math.max(0,x*0.7));else y=safeFunction(x);const py=top+h-(y/ymax)*h;if(!Number.isFinite(y)||Math.abs(y)>ymax*4){ctx.moveTo(left+px,top+h);continue;}if(px===0)ctx.moveTo(left+px,py);else ctx.lineTo(left+px,py);}ctx.stroke();
+    const safeFunction=(x:number)=>{let expr=(item.equation||'2*x+1').replace(/\^/g,'**').replace(/\b(sin|cos|tan)\s*\(/gi,(_,fn:string)=>`Math.${fn.toLowerCase()}(`).replace(/\bX\b/g,'x');if(!/^[0-9x+*/().,\s^\-Mathsincota]+$/.test(expr)||/Math\.(?!sin|cos|tan)/.test(expr))return NaN;try{return Function('x',`'use strict'; return (${expr});`)(x) as number;}catch{return NaN;}};
+    const plotPoints=item.graphPoints?.length?item.graphPoints:null;
+    if(plotPoints){plotPoints.forEach((pt,i)=>{const px=left+(pt.x/xmax)*w,py=top+h-(pt.y/ymax)*h;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);});ctx.stroke();ctx.fillStyle=red;plotPoints.forEach((pt)=>{const px=left+(pt.x/xmax)*w,py=top+h-(pt.y/ymax)*h;ctx.beginPath();ctx.arc(px,py,5,0,Math.PI*2);ctx.fill();});}
+    else {for(let px=0;px<=w;px++){const x=px/w*xmax;let y=0;if(item.diagram==='graph-st')y=x*(ymax/xmax)*0.72;else if(item.diagram==='graph-vt')y=(x/xmax<.38?ymax*.72:x/xmax<.62?ymax*.72:Math.min(ymax,x/xmax*ymax*.8));else if(item.diagram==='graph-uv')y=Math.min(ymax,Math.max(0,x*0.7));else y=safeFunction(x);const py=functionGraph?top+h/2-(y/ymax)*(h/2):top+h-(y/ymax)*h;if(!Number.isFinite(y)||Math.abs(y)>ymax*4){ctx.moveTo(left+px,top+h);continue;}if(px===0)ctx.moveTo(left+px,py);else ctx.lineTo(left+px,py);}ctx.stroke();}
     label(ctx,item.diagram==='graph-st'?'Đồ thị s–t':item.diagram==='graph-vt'?'Đồ thị v–t':item.diagram==='graph-uv'?'Đồ thị U–I':`y = ${item.equation||'2*x+1'}`,-150,-135,blue,17);label(ctx,item.diagram==='graph-st'?'s (m)':item.diagram==='graph-vt'?'v (m/s)':item.diagram==='graph-uv'?'U (V)':'y',left-5,top-24,gray,13);label(ctx,item.diagram==='graph-uv'?'I (A)':'x / t',left+w-75,top+h+25,gray,13);
     label(ctx,`Trục x: 0–${xmax} · trục y: 0–${ymax}`,-130,145,gray,13);
   } else if (item.diagram==='harmonic' || item.diagram==='unit-circle') {
@@ -172,7 +193,7 @@ export default function TeachingBoard() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const activeRef = useRef<Point[] | null>(null);
   const pointerDownRef = useRef(false);
-  const dragRef = useRef<{id:string;offset:Point;mode?:'move'|'endpoint'|'vertex';endpoint?:'from'|'to';index?:number}|null>(null);
+  const dragRef = useRef<{id:string;offset:Point;mode?:'move'|'endpoint'|'vertex'|'curve';endpoint?:'from'|'to';index?:number}|null>(null);
   const [selectedId,setSelectedId] = useState<string|null>(null);
   const [items, setItems] = useState<BoardItem[]>([]);
   const [redoItems, setRedoItems] = useState<BoardItem[][]>([]);
@@ -183,6 +204,7 @@ export default function TeachingBoard() {
   const [paper, setPaper] = useState<'white'|'dark'|'green'>('white');
   const [formulaSearch, setFormulaSearch] = useState('');
   const [equationInput, setEquationInput] = useState('2*x+1');
+  const [graphCoordinates, setGraphCoordinates] = useState('0,0; 2,20; 4,40; 6,60; 8,80; 10,100');
   const [classFilter, setClassFilter] = useState('Tất cả');
   const [message, setMessage] = useState('Bảng trống — bắt đầu viết hoặc chọn hình mẫu.');
   const [showLibrary, setShowLibrary] = useState(true);
@@ -235,12 +257,30 @@ export default function TeachingBoard() {
   const pointFromEvent = (e: React.PointerEvent<HTMLCanvasElement>): Point => {
     const r=e.currentTarget.getBoundingClientRect(); return {x:Math.max(0,Math.min(W,(e.clientX-r.left)*W/r.width)),y:Math.max(0,Math.min(H,(e.clientY-r.top)*H/r.height))};
   };
+  const graphLocalPoint=(item:Extract<BoardItem,{kind:'diagram'}>,p:Point)=>({x:(p.x-item.at.x)/(item.scale||1),y:(p.y-item.at.y)/(item.scale||1)});
+  const graphPointPixel=(pt:Point)=>({x:-220+(pt.x/settings.graphXMax)*430,y:-115+220-(pt.y/settings.graphYMax)*220});
+  const applyGraphCoordinates=()=>{
+    const parsed=graphCoordinates.split(';').map(part=>part.trim()).filter(Boolean).map(part=>part.split(/[ ,]+/).map(Number));
+    if(parsed.length<2||parsed.some(pair=>pair.length!==2||!pair.every(Number.isFinite))){setMessage('Tọa độ chưa đúng. Nhập dạng (t,s): 0,0; 2,20; 4,40. Cần ít nhất hai điểm.');return;}
+    const selected=items.find(it=>it.id===selectedId&&it.kind==='diagram'&&['graph-st','graph-vt','graph-uv'].includes(it.diagram));
+    const target=selected&&selected.kind==='diagram'?selected:items.find(it=>it.kind==='diagram'&&['graph-st','graph-vt','graph-uv'].includes(it.diagram));
+    if(!target||target.kind!=='diagram'){setMessage('Hãy chèn hoặc chọn một đồ thị s–t, v–t hoặc U–I trước.');return;}
+    const points=parsed.map(([x,y])=>({x,y}));
+    if(points.some(pt=>pt.x<0||pt.x>settings.graphXMax||pt.y<0||pt.y>settings.graphYMax)){setMessage(`Tọa độ phải nằm trong khoảng x: 0–${settings.graphXMax}, y: 0–${settings.graphYMax}. Có thể chỉnh giới hạn trục trước khi áp dụng.`);return;}
+    setItems(old=>old.map(it=>it.id===target.id&&it.kind==='diagram'?{...it,graphPoints:points}:it));setSelectedId(target.id);setRedoItems([]);setMessage(`Đã vẽ đường biểu diễn qua ${points.length} điểm tọa độ. Kéo điểm đỏ để sửa riêng từng tọa độ hoặc kéo đoạn xanh để dịch đường.`);
+  };
   const pointerDown=(e:React.PointerEvent<HTMLCanvasElement>)=>{
     const p=pointFromEvent(e);
     if(tool==='select'){
-      let hit:{item:BoardItem;mode:'move'|'endpoint'|'vertex';endpoint?:'from'|'to';index?:number}|null=null;
+      let hit:{item:BoardItem;mode:'move'|'endpoint'|'vertex'|'curve';endpoint?:'from'|'to';index?:number}|null=null;
       // Prefer handles and individual graph vertices over selecting the whole object.
       for(const it of [...items].reverse()){
+        if(it.kind==='diagram'&&it.graphPoints?.length&&['graph-st','graph-vt','graph-uv'].includes(it.diagram)){
+          const local=graphLocalPoint(it,p);const px=graphPointPixel(local);
+          const vertex=it.graphPoints.findIndex(pt=>{const q=graphPointPixel(pt);return Math.hypot(q.x-local.x,q.y-local.y)<14/(it.scale||1);});
+          if(vertex>=0){hit={item:it,mode:'vertex',index:vertex};break;}
+          const pixels=it.graphPoints.map(graphPointPixel);if(pixels.slice(1).some((q,i)=>pointSegmentDistance(local,pixels[i],q)<12/(it.scale||1))){hit={item:it,mode:'curve'};break;}
+        }
         if(it.kind==='line'||it.kind==='arrow'){
           if(Math.hypot(p.x-it.from.x,p.y-it.from.y)<14){hit={item:it,mode:'endpoint',endpoint:'from'};break;}
           if(Math.hypot(p.x-it.to.x,p.y-it.to.y)<14){hit={item:it,mode:'endpoint',endpoint:'to'};break;}
@@ -259,7 +299,7 @@ export default function TeachingBoard() {
         });
         if(found)hit={item:found,mode:'move'};
       }
-      if(hit){const found=hit.item;setSelectedId(found.id);dragRef.current={id:found.id,offset:hit.mode==='move'&&'at' in found?{x:p.x-found.at.x,y:p.y-found.at.y}:p,mode:hit.mode,endpoint:hit.endpoint,index:hit.index};e.currentTarget.setPointerCapture(e.pointerId);pointerDownRef.current=true;setMessage(hit.mode==='endpoint'?'Kéo đầu dây để thay đổi chiều dài hoặc hướng.':hit.mode==='vertex'?'Kéo điểm nút để chỉnh riêng đường biểu diễn.':'Đang di chuyển đối tượng; kéo để đặt lại vị trí.');}
+      if(hit){const found=hit.item;setSelectedId(found.id);dragRef.current={id:found.id,offset:hit.mode==='move'&&'at' in found?{x:p.x-found.at.x,y:p.y-found.at.y}:p,mode:hit.mode,endpoint:hit.endpoint,index:hit.index};e.currentTarget.setPointerCapture(e.pointerId);pointerDownRef.current=true;setMessage(hit.mode==='endpoint'?'Kéo đầu dây để thay đổi chiều dài hoặc hướng.':hit.mode==='vertex'?'Kéo điểm nút để chỉnh riêng đường biểu diễn.':hit.mode==='curve'?'Kéo đoạn đường biểu diễn để dịch riêng đường, không di chuyển hệ trục.':'Đang di chuyển đối tượng; kéo để đặt lại vị trí.');}
       else{setSelectedId(null);setMessage('Chọn gần hình, đường, điểm nút hoặc đầu dây.');}return;
     }
     if(tool==='text'){const p=pointFromEvent(e);const value=window.prompt('Nhập nội dung cần ghi lên bảng:');if(value?.trim()){setItems(old=>[...old,{id:uid(),kind:'text',at:p,text:value.trim(),color,size:26}]);setRedoItems([]);setMessage('Đã thêm chữ lên bảng.');}return;}
@@ -271,6 +311,8 @@ export default function TeachingBoard() {
       if(it.id!==d.id)return it;
       if(d.mode==='endpoint'&&(it.kind==='line'||it.kind==='arrow'))return {...it,[d.endpoint||'to']:p};
       if(d.mode==='vertex'&&it.kind==='path'&&d.index!==undefined){const points=it.points.map((q,i)=>i===d.index?p:q);if(it.graph){const eq=points.slice(1).map((q,i)=>{const a=points[i],dx=q.x-a.x,dy=q.y-a.y;if(Math.abs(dx)<8)return `đoạn ${i+1}: đứng`;const m=-dy/dx,b=-a.y-m*a.x;const trend=Math.abs(m)<0.08?'ngang':m>0?'xiên tăng':'xiên giảm';return `đoạn ${i+1} (${trend}): y≈${m.toFixed(2)}x${b>=0?'+':'−'}${Math.abs(b).toFixed(1)}`;}).join(' ; ');return {...it,points};}return {...it,points};}
+      if(d.mode==='vertex'&&it.kind==='diagram'&&it.graphPoints&&d.index!==undefined){const local=graphLocalPoint(it,p);const px=local.x+220,py=local.y+115;const point={x:Math.max(0,Math.min(settings.graphXMax,px/430*settings.graphXMax)),y:Math.max(0,Math.min(settings.graphYMax,(220-py)/220*settings.graphYMax))};return {...it,graphPoints:it.graphPoints.map((q,i)=>i===d.index?point:q)};}
+      if(d.mode==='curve'&&it.kind==='diagram'&&it.graphPoints){const dx=p.x-d.offset.x,dy=p.y-d.offset.y;const dataDx=dx/(it.scale||1)/430*settings.graphXMax,dataDy=-dy/(it.scale||1)/220*settings.graphYMax;dragRef.current={...d,offset:p};return {...it,graphPoints:it.graphPoints.map(q=>({x:Math.max(0,Math.min(settings.graphXMax,q.x+dataDx)),y:Math.max(0,Math.min(settings.graphYMax,q.y+dataDy))}))};}
       if('at' in it)return {...it,at:{x:p.x-d.offset.x,y:p.y-d.offset.y}} as BoardItem;
       const dx=p.x-d.offset.x,dy=p.y-d.offset.y;
       if(it.kind==='line'||it.kind==='arrow')return {...it,from:{x:it.from.x+dx,y:it.from.y+dy},to:{x:it.to.x+dx,y:it.to.y+dy}};
@@ -289,7 +331,7 @@ export default function TeachingBoard() {
   };
   const addDiagram=(diagram:Diagram)=>{setItems(old=>[...old,{id:uid(),kind:'diagram',diagram,at:{x:W/2,y:H/2},scale:1}]);setRedoItems([]);setMessage('Đã thêm hình mẫu. Có thể tiếp tục vẽ, ghi chú hoặc xóa bằng công cụ tẩy.');};
   const addComponent=(diagram:Diagram)=>{if(diagram==='wire'){setItems(old=>[...old,{id:uid(),kind:'line',from:{x:W/2-90,y:H/2},to:{x:W/2+90,y:H/2},color,width:Math.max(3,lineWidth)}]);setRedoItems([]);setMessage('Đã thêm dây nối. Chọn / di chuyển rồi kéo một đầu dây để đổi độ dài hoặc hướng.');return;}setItems(old=>[...old,{id:uid(),kind:'diagram',diagram,at:{x:W/2,y:H/2},scale:1}]);setRedoItems([]);setMessage('Đã chèn dụng cụ riêng lẻ; có thể xoay, thay đổi kích thước và lắp mạch.');};
-  const addFunctionGraph=()=>{const expr=equationInput.trim();if(!expr||!/^[0-9xX+*/().,\s^\-]+$/.test(expr)){setMessage('Phương trình chỉ dùng x, số, dấu + − × ÷, ngoặc và lũy thừa ^. Ví dụ: 2*x+1 hoặc x^2-4.');return;}setItems(old=>[...old,{id:uid(),kind:'diagram',diagram:'graph-function',at:{x:W/2,y:H/2},scale:1,equation:expr}]);setRedoItems([]);setMessage(`Đã tạo đồ thị y = ${expr}. Chọn / di chuyển để kéo đồ thị đến vị trí mong muốn.`);};
+  const addFunctionGraph=()=>{const expr=equationInput.trim();const normalized=expr.replace(/\b(sin|cos|tan)\s*\(/gi,'').replace(/[xX]/g,'');if(!expr||!/^[0-9+*/().,\s^\-]*$/.test(normalized)||/[a-wyzA-WYZ]/.test(expr.replace(/\b(sin|cos|tan)\b/gi,'').replace(/[xX]/g,''))){setMessage('Có thể dùng x, số, + − * /, ngoặc, lũy thừa ^ và các hàm sin(x), cos(x), tan(x). Ví dụ: sin(x), cos(2*x), 3*sin(x)+1, x^2-4. Góc được tính theo radian.');return;}setItems(old=>[...old,{id:uid(),kind:'diagram',diagram:'graph-function',at:{x:W/2,y:H/2},scale:1,equation:expr}]);setRedoItems([]);setMessage(`Đã tạo đồ thị y = ${expr}. Hàm lượng giác dùng radian. Chọn / di chuyển để kéo đồ thị đến vị trí mong muốn.`);};
   const addFormula=(f:Formula)=>{setItems(old=>[...old,{id:uid(),kind:'text',at:{x:55,y:90+old.filter(i=>i.kind==='text').length*38},text:`${f.name}: ${f.expression}`,color,size:27}]);setRedoItems([]);setMessage(`Đã ghi công thức ${f.name} lên bảng.`);};
   const undo=()=>{setItems(old=>{if(!old.length)return old;setRedoItems(r=>[...r,old]);setMessage('Đã hoàn tác thao tác gần nhất.');return old.slice(0,-1);});};
   const redo=()=>{setRedoItems(old=>{if(!old.length)return old;const next=old[old.length-1];setItems(cur=>[...cur,next[next.length-1]]);setMessage('Đã làm lại thao tác.');return old.slice(0,-1);});};
@@ -336,8 +378,9 @@ export default function TeachingBoard() {
             <label className="mt-3 block text-sm font-semibold">Pha ban đầu φ: {settings.phase}°<input className="w-full accent-blue-600" type="range" min="-180" max="180" value={settings.phase} onChange={e=>updateSetting('phase',Number(e.target.value))}/></label>
             <div className="mt-4 grid grid-cols-2 gap-2">{[['graph-st','Đồ thị s–t'],['graph-vt','Đồ thị v–t'],['graph-uv','Đồ thị U–I'],['graph-function','Đồ thị phương trình'],['harmonic','Dao động điều hòa'],['unit-circle','Vòng tròn lượng giác']].map(([d,t])=><button key={d} onClick={()=>addComponent(d as Diagram)} className="rounded-xl border border-slate-200 p-2 text-left text-xs font-bold hover:border-blue-400 hover:bg-blue-50">{t}</button>)}</div>
             <div className="mt-3 grid grid-cols-2 gap-2">{[['battery','Nguồn điện'],['resistor','Điện trở R'],['lamp','Bóng đèn'],['switch','Khóa K'],['ammeter','Ampe kế'],['voltmeter','Vôn kế'],['wire','Dây nối']].map(([d,t])=><button key={d} onClick={()=>addComponent(d as Diagram)} className="rounded-xl border border-slate-200 p-2 text-left text-xs font-bold hover:border-emerald-400 hover:bg-emerald-50">+ {t}</button>)}</div>
-            <div className="mt-4 rounded-2xl border border-violet-200 bg-violet-50 p-3"><h3 className="font-black text-violet-900">Vẽ đồ thị từ phương trình</h3><p className="mt-1 text-xs text-violet-800">Dùng x làm biến. Ví dụ: 2*x+1, 0.5*x, x^2-4. Dùng dấu * để nhân và ^ để lũy thừa.</p><label className="mt-2 block text-xs font-bold">y = f(x)<input value={equationInput} onChange={e=>setEquationInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')addFunctionGraph();}} placeholder="Ví dụ: 2*x+1" className="mt-1 w-full rounded-lg border border-violet-200 bg-white px-3 py-2 text-sm" /></label><button onClick={addFunctionGraph} className="mt-2 w-full rounded-xl bg-violet-700 px-3 py-2 text-sm font-black text-white hover:bg-violet-800">+ Tạo đồ thị có thể kéo</button></div>
+            <div className="mt-4 rounded-2xl border border-violet-200 bg-violet-50 p-3"><h3 className="font-black text-violet-900">Vẽ đồ thị từ phương trình</h3><p className="mt-1 text-xs text-violet-800">Dùng x làm biến. Hỗ trợ sin(x), cos(x), tan(x), 2*x+1, x^2-4. Dùng dấu * để nhân, ^ để lũy thừa; góc lượng giác tính bằng radian.</p><label className="mt-2 block text-xs font-bold">y = f(x)<input value={equationInput} onChange={e=>setEquationInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')addFunctionGraph();}} placeholder="Ví dụ: sin(x), cos(2*x), x^2-4" className="mt-1 w-full rounded-lg border border-violet-200 bg-white px-3 py-2 text-sm" /></label><button onClick={addFunctionGraph} className="mt-2 w-full rounded-xl bg-violet-700 px-3 py-2 text-sm font-black text-white hover:bg-violet-800">+ Tạo đồ thị có thể kéo</button></div>
             <div className="mt-3 grid grid-cols-2 gap-2"><label className="text-xs font-semibold">Trục x tối đa<input className="mt-1 w-full rounded-lg border p-2" type="number" min="1" max="1000" value={settings.graphXMax} onChange={e=>updateSetting('graphXMax',Math.max(1,Number(e.target.value)||1))}/></label><label className="text-xs font-semibold">Trục y tối đa<input className="mt-1 w-full rounded-lg border p-2" type="number" min="1" max="1000" value={settings.graphYMax} onChange={e=>updateSetting('graphYMax',Math.max(1,Number(e.target.value)||1))}/></label></div>
+            <div className="mt-3 rounded-2xl border border-blue-200 bg-blue-50 p-3"><h3 className="font-black text-blue-900">Vẽ đồ thị theo tọa độ điểm</h3><p className="mt-1 text-xs text-blue-800">Nhập các cặp (x,y), cách nhau bằng dấu chấm phẩy. Ví dụ: 0,0; 2,20; 4,40. Với s–t, x là t và y là s; với v–t, x là t và y là v.</p><textarea value={graphCoordinates} onChange={e=>setGraphCoordinates(e.target.value)} rows={3} className="mt-2 w-full rounded-lg border border-blue-200 bg-white p-2 text-sm" aria-label="Danh sách tọa độ điểm đồ thị"/><button onClick={applyGraphCoordinates} className="mt-2 w-full rounded-xl bg-blue-700 px-3 py-2 text-sm font-black text-white hover:bg-blue-800">Vẽ / cập nhật đường biểu diễn</button><p className="mt-2 text-xs text-blue-800">Sau khi vẽ: kéo điểm đỏ để sửa một điểm; kéo đoạn xanh để di chuyển riêng đường biểu diễn.</p></div>
             <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">Lưu ý: tham số điều khiển tác động lên các hình mẫu được vẽ lại; đây là công cụ minh họa giảng dạy, chưa thay thế phần mềm mô phỏng quang học/điện học định lượng chuyên dụng.</p>
           </section>
           <section className="rounded-3xl border border-violet-100 bg-white p-4 shadow-lg"><div className="flex items-center justify-between gap-2"><div><h2 className="text-lg font-black">Hình mẫu Vật lý</h2><p className="mt-1 text-xs text-slate-500">Chọn / di chuyển để kéo hình và nét; kéo nút ở hai đầu đoạn thẳng/dây để đổi chiều dài, kéo điểm trên nét đồ thị để sửa từng đoạn. Dùng Đoạn thẳng hoặc Véc tơ để nối linh kiện.</p></div><button onClick={()=>setShowLibrary(v=>!v)} className="rounded-lg border p-2" title="Thu gọn/mở rộng thư viện">{showLibrary?<ChevronRight size={18} className="rotate-90"/>:<ChevronRight size={18}/>}</button></div>
