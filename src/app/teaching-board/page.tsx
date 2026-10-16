@@ -48,6 +48,7 @@ const formulas: Formula[] = [
   { group: 'Lớp 7 · Tốc độ', name: 'Quãng đường theo quy tắc 3 giây', expression: 'd = 3 · v', note: 'Trong 3 giây chuyển động đều, quãng đường d = v·t = 3v (v tính bằng m/s, d bằng m)' },
   { group: 'Lớp 8 · Áp suất chất lỏng', name: 'Áp suất chất lỏng', expression: 'p = d · h', note: 'd là trọng lượng riêng của chất lỏng (N/m³), h là độ sâu (m), p tính bằng Pa' },
   { group: 'Lớp 8 · Áp suất chất lỏng', name: 'Bình thông nhau', expression: 'h₁ = h₂  (cùng chất lỏng, cân bằng)', note: 'Ở trạng thái cân bằng, các mặt thoáng của cùng một chất lỏng đứng yên trong các nhánh hở nằm trên cùng độ cao' },
+  { group: 'Lớp 8 · Áp suất chất lỏng', name: 'Máy nén thủy lực (định luật Pascal)', expression: 'f / s = F / S', note: 'Áp suất truyền nguyên vẹn trong chất lỏng kín: f, F là lực tác dụng; s, S là diện tích các pít-tông tương ứng.' },
   { group: 'Lớp 9 · Điện học', name: 'Điện trở dây dẫn', expression: 'R = ρ · l / S', note: 'ρ là điện trở suất, l là chiều dài dây, S là tiết diện dây dẫn đồng chất' },
 ];
 const rooms = [
@@ -108,35 +109,48 @@ function drawDiagram(ctx: CanvasRenderingContext2D, item: Extract<BoardItem, {ki
     // so that its backward extension passes through F on the object side.
     ctx.strokeStyle=green;ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(tip.x,tip.y);ctx.lineTo(0,tip.y);ctx.stroke();
     if(convex){
-      ctx.beginPath();ctx.moveTo(0,tip.y);ctx.lineTo(245, (-tip.y/fPx)*245);ctx.stroke();
+      // Với quy ước của thầy: F ở phía ảnh (bên kia thấu kính), F′ ở phía vật.
+      // Tia tới song song trục sau khúc xạ phải đi qua F; vì vậy tia ló bắt đầu tại (0, tip.y) và cắt trục tại x=f.
+      ctx.beginPath();ctx.moveTo(0,tip.y);ctx.lineTo(245, tip.y + (-tip.y/fPx)*245);ctx.stroke();
     } else {
       const endX=245, slope=tip.y/fPx;
       ctx.beginPath();ctx.moveTo(0,tip.y);ctx.lineTo(endX,tip.y+slope*endX);ctx.stroke();
       ctx.save();ctx.setLineDash([6,5]);ctx.strokeStyle=green;ctx.beginPath();ctx.moveTo(0,tip.y);ctx.lineTo(-fPx,0);ctx.stroke();ctx.restore();
     }
     ctx.fillStyle=gray;[-fPx,fPx].forEach((x)=>{ctx.beginPath();ctx.arc(x,0,4,0,Math.PI*2);ctx.fill();});
-    label(ctx,'F',-fPx-7,20,gray,14);label(ctx,'F′',fPx-7,20,gray,14);label(ctx,'O',7,20,gray,14);
+    label(ctx,"F′",-fPx-12,20,gray,14);label(ctx,'F',fPx-7,20,gray,14);label(ctx,'O',7,20,gray,14);
     label(ctx,`${convex?'Hội tụ':'Phân kỳ'} · f=${settings.focalLength} cm · d=${settings.objectDistance} cm`,-235,142,blue,14);
   } else if (item.diagram === 'prism' || item.diagram === 'dispersion') {
     ctx.rotate(settings.prismAngle*Math.PI/180);
     ctx.strokeStyle = purple; ctx.fillStyle = 'rgba(196,181,253,.24)'; ctx.beginPath(); ctx.moveTo(0,-88); ctx.lineTo(-82,65); ctx.lineTo(82,65); ctx.closePath(); ctx.fill(); ctx.stroke();
-    // Correct path through the triangular prism: enter the left face, refract inside,
-    // exit the right face, then deviate toward the base (downward in this orientation).
-    const entry={x:-43,y:-8}, exit={x:43,y:-8}, inner={x:0,y:18};
-    arrow(ctx,{x:-235,y:-8},entry,settings.prismRayColor,3,11);
-    ctx.strokeStyle=settings.prismRayColor;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(entry.x,entry.y);ctx.lineTo(inner.x,inner.y);ctx.lineTo(exit.x,exit.y);ctx.stroke();
-    if(item.diagram==='prism') arrow(ctx,exit,{x:220,y:92+settings.prismAngle*1.2},settings.prismRayColor,3,11);
-    else {
+    // Rays enter the left sloping face and exit the right sloping face. The emergent ray bends toward the prism base.
+    const entry={x:-47,y:0}, exit={x:48,y:20}, inner={x:8,y:15};
+    const prismInputColor=item.diagram==='dispersion'?'#334155':settings.prismRayColor;
+    arrow(ctx,{x:-235,y:0},entry,prismInputColor,3,11);
+    ctx.strokeStyle=prismInputColor;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(entry.x,entry.y);ctx.lineTo(inner.x,inner.y);ctx.lineTo(exit.x,exit.y);ctx.stroke();
+    if(item.diagram==='prism') {
+      arrow(ctx,exit,{x:220,y:88+settings.prismAngle*1.2},settings.prismRayColor,3,11);
+      label(ctx,'Ánh sáng đơn sắc',-225,120,settings.prismRayColor,13);
+    } else {
+      // White light is white before the prism; dispersion separates wavelengths only after emerging.
       const colors=['#dc2626','#f97316','#eab308','#16a34a','#2563eb','#4f46e5','#9333ea'];
-      colors.forEach((c,i)=>{const y=48+i*8;arrow(ctx,exit,{x:220,y:y+25+settings.prismAngle*1.2},c,2.5,9);});
-      label(ctx,'Đỏ · lệch ít',225,36,colors[0],13);label(ctx,'Tím · lệch nhiều',225,118,colors[6],13);
+      const offsets=[-17,-10,-4,2,8,14,20];
+      colors.forEach((c,i)=>arrow(ctx,exit,{x:220,y:48+offsets[i]+settings.prismAngle*1.2},c,2.5,9));
+      label(ctx,'Ánh sáng trắng',-225,-22,'#334155',13);label(ctx,'Đỏ: lệch ít',225,22,colors[0],12);label(ctx,'Tím: lệch nhiều',225,105,colors[6],12);
     }
-    label(ctx,'Tia tới',-195,-22,settings.prismRayColor,12);label(ctx,'Tia khúc xạ trong lăng kính',-45,42,settings.prismRayColor,11);label(ctx,'Tia ló',115,65,settings.prismRayColor,12);
+    label(ctx,'Tia tới',-195,-22,prismInputColor,12);label(ctx,'Tia trong lăng kính',-40,45,prismInputColor,11);label(ctx,'Tia ló',112,66,settings.prismRayColor,12);
     label(ctx,`Lăng kính · xoay ${settings.prismAngle}°`,-220,145,gray,15);
   } else if (item.diagram === 'mirror' || item.diagram === 'refraction') {
     ctx.strokeStyle = gray; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(0,-105); ctx.lineTo(0,105); ctx.stroke();
     ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.setLineDash([5,5]); ctx.beginPath(); ctx.moveTo(-220,0); ctx.lineTo(220,0); ctx.stroke(); ctx.setLineDash([]);
-    if (item.diagram === 'mirror') { arrow(ctx,{x:-145,y:-95},{x:0,y:0},red,3,12); arrow(ctx,{x:0,y:0},{x:-145,y:95},green,3,12); label(ctx,'i',-92,-42,red,17); label(ctx,'i′',-90,58,green,17); label(ctx,'Gương phẳng',15,-85,gray,16); }
+    if (item.diagram === 'mirror') {
+      arrow(ctx,{x:-145,y:-95},{x:0,y:0},red,3,12); arrow(ctx,{x:0,y:0},{x:-145,y:95},green,3,12);
+      // Vertical mirror: the normal is horizontal; both angles are measured from the normal, not from the mirror.
+      ctx.strokeStyle=gray;ctx.setLineDash([5,5]);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-205,0);ctx.lineTo(205,0);ctx.stroke();ctx.setLineDash([]);
+      ctx.strokeStyle=red;ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,42,Math.PI,Math.PI+Math.atan2(-95,-145)-Math.PI);ctx.stroke();
+      ctx.strokeStyle=green;ctx.beginPath();ctx.arc(0,0,52,Math.PI+Math.atan2(95,-145)-Math.PI,Math.PI);ctx.stroke();
+      label(ctx,'i',-77,-22,red,17);label(ctx,'i′',-80,39,green,17);label(ctx,'i = i′',-35,75,blue,15);label(ctx,'Pháp tuyến',75,15,gray,12);label(ctx,'Gương phẳng',15,-85,gray,16);
+    }
     else {
       const waterToAir=settings.refractionDirection==='water-air';
       const nAir=1.0003,nWater=settings.refractiveIndex;
@@ -145,15 +159,15 @@ function drawDiagram(ctx: CanvasRenderingContext2D, item: Extract<BoardItem, {ki
       label(ctx,waterToAir?'Nước (n₁)':'Không khí (n₁)',-205,-82,gray,16);label(ctx,waterToAir?'Không khí (n₂)':'Nước (n₂)',-205,105,gray,16);
       const i=settings.incidentAngle*Math.PI/180;const ratio=n1*Math.sin(i)/n2;const tir=Math.abs(ratio)>1;const r=tir?i:Math.asin(Math.max(-1,Math.min(1,ratio)));
       // Incident ray approaches the horizontal interface from the upper medium; normal is vertical.
-      arrow(ctx,{x:-180*Math.sin(i),y:-180*Math.cos(i)},{x:0,y:0},red,3,12);
-      if(tir){arrow(ctx,{x:0,y:0},{x:180*Math.sin(i),y:-180*Math.cos(i)},green,3,12);label(ctx,'Phản xạ toàn phần',18,-35,green,14);}
-      else arrow(ctx,{x:0,y:0},{x:180*Math.sin(r),y:180*Math.cos(r)},green,3,12);
+      arrow(ctx,{x:-180*Math.sin(i),y:-180*Math.cos(i)},{x:0,y:0},settings.prismRayColor||red,3,12);
+      if(tir){arrow(ctx,{x:0,y:0},{x:180*Math.sin(i),y:-180*Math.cos(i)},settings.prismRayColor||green,3,12);label(ctx,'Phản xạ toàn phần',18,-35,green,14);}
+      else arrow(ctx,{x:0,y:0},{x:180*Math.sin(r),y:180*Math.cos(r)},settings.prismRayColor||green,3,12);
       ctx.strokeStyle=gray;ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(0,-120);ctx.lineTo(0,120);ctx.stroke();ctx.setLineDash([]);
       // Draw clear angle arcs measured from the normal.
       ctx.strokeStyle=red;ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,34,-Math.PI/2-i,-Math.PI/2);ctx.stroke();
       ctx.strokeStyle=green;ctx.beginPath();ctx.arc(0,0,43,Math.PI/2,Math.PI/2+r);ctx.stroke();
       label(ctx,`i = ${settings.incidentAngle}°`,-92,-45,red,14);label(ctx,`r = ${(r*180/Math.PI).toFixed(1)}°`,15,58,green,14);
-      label(ctx,`Tia: ${waterToAir?'nước → không khí':'không khí → nước'}`,-205,145,gray,14);label(ctx,`n₁=${n1.toFixed(2)} · n₂=${n2.toFixed(2)}`,-205,165,gray,14);
+      label(ctx,`Tia: ${waterToAir?'nước → không khí':'không khí → nước'} · màu không đổi`,-205,145,gray,13);label(ctx,`n₁=${n1.toFixed(2)} · n₂=${n2.toFixed(2)}`,-205,165,gray,14);
     }
   } else if (item.diagram === 'circuit') {
     ctx.strokeStyle = gray; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-150,-65);ctx.lineTo(150,-65);ctx.lineTo(150,65);ctx.lineTo(-150,65);ctx.lineTo(-150,-65);ctx.stroke();
@@ -348,6 +362,7 @@ export default function TeachingBoard() {
   const addDiagram=(diagram:Diagram)=>{setItems(old=>[...old,{id:uid(),kind:'diagram',diagram,at:{x:W/2,y:H/2},scale:1}]);setRedoItems([]);setMessage('Đã thêm hình mẫu. Có thể tiếp tục vẽ, ghi chú hoặc xóa bằng công cụ tẩy.');};
   const addComponent=(diagram:Diagram)=>{if(diagram==='wire'){setItems(old=>[...old,{id:uid(),kind:'line',from:{x:W/2-90,y:H/2},to:{x:W/2+90,y:H/2},color,width:Math.max(3,lineWidth)}]);setRedoItems([]);setMessage('Đã thêm dây nối. Chọn / di chuyển rồi kéo một đầu dây để đổi độ dài hoặc hướng.');return;}setItems(old=>[...old,{id:uid(),kind:'diagram',diagram,at:{x:W/2,y:H/2},scale:1}]);setRedoItems([]);setMessage('Đã chèn dụng cụ riêng lẻ; có thể xoay, thay đổi kích thước và lắp mạch.');};
   const addFunctionGraph=()=>{const expr=equationInput.trim();const normalized=expr.replace(/\b(sin|cos|tan)\s*\(/gi,'').replace(/[xX]/g,'');if(!expr||!/^[0-9+*/().,\s^\-]*$/.test(normalized)||/[a-wyzA-WYZ]/.test(expr.replace(/\b(sin|cos|tan)\b/gi,'').replace(/[xX]/g,''))){setMessage('Có thể dùng x, số, + − * /, ngoặc, lũy thừa ^ và các hàm sin(x), cos(x), tan(x). Ví dụ: sin(x), cos(2*x), 3*sin(x)+1, x^2-4. Góc được tính theo radian.');return;}setItems(old=>[...old,{id:uid(),kind:'diagram',diagram:'graph-function',at:{x:W/2,y:H/2},scale:1,equation:expr}]);setRedoItems([]);setMessage(`Đã tạo đồ thị y = ${expr}. Hàm lượng giác dùng radian. Chọn / di chuyển để kéo đồ thị đến vị trí mong muốn.`);};
+  const combineVectors=()=>{const vectors=items.filter((it):it is Extract<BoardItem,{kind:'arrow'}>=>it.kind==='arrow');if(vectors.length<2){setMessage('Hãy dùng công cụ Véc tơ / mũi tên để vẽ ít nhất hai véc tơ, sau đó nhấn Tổng hợp véc tơ.');return;}const dx=vectors.reduce((sum,v)=>sum+v.to.x-v.from.x,0),dy=vectors.reduce((sum,v)=>sum+v.to.y-v.from.y,0);const origin={x:120,y:H-110};const end={x:Math.max(15,Math.min(W-15,origin.x+dx)),y:Math.max(15,Math.min(H-15,origin.y+dy))};setItems(old=>[...old,{id:uid(),kind:'arrow',from:origin,to:end,color:'#059669',width:5},{id:uid(),kind:'text',at:{x:origin.x+10,y:origin.y+28},text:`R = Σv (${vectors.length} véc tơ)`,color:'#059669',size:20}]);setRedoItems([]);setMessage(`Đã tổng hợp ${vectors.length} véc tơ bằng cách cộng các thành phần tọa độ; véc tơ hợp lực màu xanh lá được đặt gần góc dưới bên trái.`);};
   const addFormula=(f:Formula)=>{setItems(old=>[...old,{id:uid(),kind:'text',at:{x:55,y:90+old.filter(i=>i.kind==='text').length*38},text:`${f.name}: ${f.expression}`,color,size:27}]);setRedoItems([]);setMessage(`Đã ghi công thức ${f.name} lên bảng.`);};
   const undo=()=>{setItems(old=>{if(!old.length)return old;setRedoItems(r=>[...r,old]);setMessage('Đã hoàn tác thao tác gần nhất.');return old.slice(0,-1);});};
   const redo=()=>{setRedoItems(old=>{if(!old.length)return old;const next=old[old.length-1];setItems(cur=>[...cur,next[next.length-1]]);setMessage('Đã làm lại thao tác.');return old.slice(0,-1);});};
@@ -370,7 +385,7 @@ export default function TeachingBoard() {
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
         <section className="min-w-0 overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-lg">
           <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 p-3 sm:p-4">
-            {toolBtn('select','Chọn / di chuyển',Hand)}{toolBtn('pen','Bút viết',Pencil)}{toolBtn('eraser','Tẩy',Eraser)}{toolBtn('line','Đoạn thẳng',Minus)}{toolBtn('arrow','Véc tơ / mũi tên',ArrowUpRight)}{toolBtn('text','Chữ',Type)}{toolBtn('graph','Đồ thị tay',Pencil)}
+            {toolBtn('select','Chọn / di chuyển',Hand)}{toolBtn('pen','Bút viết',Pencil)}{toolBtn('eraser','Tẩy',Eraser)}{toolBtn('line','Đoạn thẳng',Minus)}{toolBtn('arrow','Véc tơ / mũi tên',ArrowUpRight)}<button onClick={combineVectors} className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100" title="Cộng các véc tơ đã vẽ theo thành phần tọa độ">Tổng hợp véc tơ</button>{toolBtn('text','Chữ',Type)}{toolBtn('graph','Đồ thị tay',Pencil)}
             <div className="mx-1 hidden h-8 w-px bg-slate-200 sm:block"/><label title="Màu nét" className="flex items-center gap-2 rounded-xl border border-slate-200 px-2 py-1.5 text-xs font-bold">Màu <input type="color" value={color} onChange={e=>setColor(e.target.value)} className="h-7 w-8 cursor-pointer border-0 bg-transparent"/></label>
             <label className="flex min-w-28 items-center gap-2 rounded-xl border border-slate-200 px-2 py-1.5 text-xs font-bold">Nét <input aria-label="Độ dày nét" type="range" min="1" max="14" value={lineWidth} onChange={e=>setLineWidth(Number(e.target.value))} className="w-16 accent-blue-600"/>{lineWidth}</label>
             <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold"><input type="checkbox" checked={grid} onChange={e=>setGrid(e.target.checked)} className="accent-blue-600"/>Lưới</label>
