@@ -44,6 +44,11 @@ const formulas: Formula[] = [
   { group: 'Lớp 10–12 · Lượng giác', name: 'Tang của góc', expression: 'tan α = sin α / cos α', note: 'Xác định khi cos α ≠ 0' },
   { group: 'Lớp 10–12 · Sóng', name: 'Tốc độ truyền sóng', expression: 'v = λf', note: 'λ: bước sóng; f: tần số' },
   { group: 'Lớp 10–12 · Điện từ', name: 'Cảm ứng điện từ', expression: 'e = −ΔΦ / Δt', note: 'Suất điện động cảm ứng theo định luật Faraday–Lenz' },
+  { group: 'Lớp 6 · Lực', name: 'Trọng lượng (gần đúng)', expression: 'P = 10 · m', note: 'P tính bằng niutơn (N), m tính bằng kilôgam (kg); dùng gần đúng g ≈ 10 N/kg' },
+  { group: 'Lớp 7 · Tốc độ', name: 'Quãng đường theo quy tắc 3 giây', expression: 'd = 3 · v', note: 'Trong 3 giây chuyển động đều, quãng đường d = v·t = 3v (v tính bằng m/s, d bằng m)' },
+  { group: 'Lớp 8 · Áp suất chất lỏng', name: 'Áp suất chất lỏng', expression: 'p = d · h', note: 'd là trọng lượng riêng của chất lỏng (N/m³), h là độ sâu (m), p tính bằng Pa' },
+  { group: 'Lớp 8 · Áp suất chất lỏng', name: 'Bình thông nhau', expression: 'h₁ = h₂  (cùng chất lỏng, cân bằng)', note: 'Ở trạng thái cân bằng, các mặt thoáng của cùng một chất lỏng đứng yên trong các nhánh hở nằm trên cùng độ cao' },
+  { group: 'Lớp 9 · Điện học', name: 'Điện trở dây dẫn', expression: 'R = ρ · l / S', note: 'ρ là điện trở suất, l là chiều dài dây, S là tiết diện dây dẫn đồng chất' },
 ];
 const rooms = [
   { title: 'Thư viện', desc: 'Mở tài liệu và video theo bài học', href: '/library', icon: BookOpen },
@@ -115,33 +120,40 @@ function drawDiagram(ctx: CanvasRenderingContext2D, item: Extract<BoardItem, {ki
   } else if (item.diagram === 'prism' || item.diagram === 'dispersion') {
     ctx.rotate(settings.prismAngle*Math.PI/180);
     ctx.strokeStyle = purple; ctx.fillStyle = 'rgba(196,181,253,.24)'; ctx.beginPath(); ctx.moveTo(0,-88); ctx.lineTo(-82,65); ctx.lineTo(82,65); ctx.closePath(); ctx.fill(); ctx.stroke();
-    // Incident beam enters the left face; emergent rays bend toward the prism base.
-    arrow(ctx,{x:-235,y:-8},{x:-52,y:-8},settings.prismRayColor,3,11);
-    ctx.strokeStyle=settings.prismRayColor;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-52,-8);ctx.lineTo(0,18);ctx.stroke();
-    if(item.diagram==='prism') arrow(ctx,{x:0,y:18},{x:220,y:92},settings.prismRayColor,3,11);
+    // Correct path through the triangular prism: enter the left face, refract inside,
+    // exit the right face, then deviate toward the base (downward in this orientation).
+    const entry={x:-43,y:-8}, exit={x:43,y:-8}, inner={x:0,y:18};
+    arrow(ctx,{x:-235,y:-8},entry,settings.prismRayColor,3,11);
+    ctx.strokeStyle=settings.prismRayColor;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(entry.x,entry.y);ctx.lineTo(inner.x,inner.y);ctx.lineTo(exit.x,exit.y);ctx.stroke();
+    if(item.diagram==='prism') arrow(ctx,exit,{x:220,y:92+settings.prismAngle*1.2},settings.prismRayColor,3,11);
     else {
       const colors=['#dc2626','#f97316','#eab308','#16a34a','#2563eb','#4f46e5','#9333ea'];
-      colors.forEach((c,i)=>{const y=45+i*9;arrow(ctx,{x:0,y:18},{x:220,y:y+25},c,2.5,9);});
+      colors.forEach((c,i)=>{const y=48+i*8;arrow(ctx,exit,{x:220,y:y+25+settings.prismAngle*1.2},c,2.5,9);});
       label(ctx,'Đỏ · lệch ít',225,36,colors[0],13);label(ctx,'Tím · lệch nhiều',225,118,colors[6],13);
     }
+    label(ctx,'Tia tới',-195,-22,settings.prismRayColor,12);label(ctx,'Tia khúc xạ trong lăng kính',-45,42,settings.prismRayColor,11);label(ctx,'Tia ló',115,65,settings.prismRayColor,12);
     label(ctx,`Lăng kính · xoay ${settings.prismAngle}°`,-220,145,gray,15);
   } else if (item.diagram === 'mirror' || item.diagram === 'refraction') {
     ctx.strokeStyle = gray; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(0,-105); ctx.lineTo(0,105); ctx.stroke();
     ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.setLineDash([5,5]); ctx.beginPath(); ctx.moveTo(-220,0); ctx.lineTo(220,0); ctx.stroke(); ctx.setLineDash([]);
     if (item.diagram === 'mirror') { arrow(ctx,{x:-145,y:-95},{x:0,y:0},red,3,12); arrow(ctx,{x:0,y:0},{x:-145,y:95},green,3,12); label(ctx,'i',-92,-42,red,17); label(ctx,'i′',-90,58,green,17); label(ctx,'Gương phẳng',15,-85,gray,16); }
     else {
-      const waterBelow=settings.refractionDirection==='water-air';
-      ctx.fillStyle='rgba(125,211,252,.22)';ctx.fillRect(-220,waterBelow?0:-120,440,120);
-      label(ctx,waterBelow?'Không khí':'Nước',-205,-82,gray,16);label(ctx,waterBelow?'Nước':'Không khí',-205,105,gray,16);
-      const i=settings.incidentAngle*Math.PI/180;const n1=waterBelow?settings.refractiveIndex:1,n2=waterBelow?1:settings.refractiveIndex;const ratio=n1*Math.sin(i)/n2;const tir=Math.abs(ratio)>1;const r=tir?i:Math.asin(Math.max(-.999,Math.min(.999,ratio)));
-      const sign=waterBelow?1:-1;
-      // Incoming ray travels toward the interface from the source medium; transmitted ray continues into the other medium.
-      arrow(ctx,{x:-180*Math.sin(i),y:sign*180*Math.cos(i)},{x:0,y:0},red,3,12);
-      if(tir){arrow(ctx,{x:0,y:0},{x:180*Math.sin(i),y:sign*180*Math.cos(i)},green,3,12);label(ctx,'Phản xạ toàn phần',18,sign*35,green,14);}
-      else arrow(ctx,{x:0,y:0},{x:180*Math.sin(r),y:-sign*180*Math.cos(r)},green,3,12);
+      const waterToAir=settings.refractionDirection==='water-air';
+      const nAir=1.0003,nWater=settings.refractiveIndex;
+      const n1=waterToAir?nWater:nAir,n2=waterToAir?nAir:nWater;
+      ctx.fillStyle='rgba(125,211,252,.22)';ctx.fillRect(-220,0,440,120);
+      label(ctx,waterToAir?'Nước (n₁)':'Không khí (n₁)',-205,-82,gray,16);label(ctx,waterToAir?'Không khí (n₂)':'Nước (n₂)',-205,105,gray,16);
+      const i=settings.incidentAngle*Math.PI/180;const ratio=n1*Math.sin(i)/n2;const tir=Math.abs(ratio)>1;const r=tir?i:Math.asin(Math.max(-1,Math.min(1,ratio)));
+      // Incident ray approaches the horizontal interface from the upper medium; normal is vertical.
+      arrow(ctx,{x:-180*Math.sin(i),y:-180*Math.cos(i)},{x:0,y:0},red,3,12);
+      if(tir){arrow(ctx,{x:0,y:0},{x:180*Math.sin(i),y:-180*Math.cos(i)},green,3,12);label(ctx,'Phản xạ toàn phần',18,-35,green,14);}
+      else arrow(ctx,{x:0,y:0},{x:180*Math.sin(r),y:180*Math.cos(r)},green,3,12);
       ctx.strokeStyle=gray;ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(0,-120);ctx.lineTo(0,120);ctx.stroke();ctx.setLineDash([]);
-      label(ctx,`i=${settings.incidentAngle}°`,-145,sign*90,red,15);label(ctx,`r≈${(r*180/Math.PI).toFixed(1)}°`,15,-sign*55,green,15);
-      label(ctx,waterBelow?'Tia sáng: nước → không khí':'Tia sáng: không khí → nước',-205,145,gray,14);label(ctx,`n₂=${n2.toFixed(2)}`,-205,165,gray,14);
+      // Draw clear angle arcs measured from the normal.
+      ctx.strokeStyle=red;ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,34,-Math.PI/2-i,-Math.PI/2);ctx.stroke();
+      ctx.strokeStyle=green;ctx.beginPath();ctx.arc(0,0,43,Math.PI/2,Math.PI/2+r);ctx.stroke();
+      label(ctx,`i = ${settings.incidentAngle}°`,-92,-45,red,14);label(ctx,`r = ${(r*180/Math.PI).toFixed(1)}°`,15,58,green,14);
+      label(ctx,`Tia: ${waterToAir?'nước → không khí':'không khí → nước'}`,-205,145,gray,14);label(ctx,`n₁=${n1.toFixed(2)} · n₂=${n2.toFixed(2)}`,-205,165,gray,14);
     }
   } else if (item.diagram === 'circuit') {
     ctx.strokeStyle = gray; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-150,-65);ctx.lineTo(150,-65);ctx.lineTo(150,65);ctx.lineTo(-150,65);ctx.lineTo(-150,-65);ctx.stroke();
@@ -164,7 +176,11 @@ function drawDiagram(ctx: CanvasRenderingContext2D, item: Extract<BoardItem, {ki
     const xmax=settings.graphXMax,ymax=settings.graphYMax;ctx.strokeStyle=blue;ctx.lineWidth=3;ctx.beginPath();
     const safeFunction=(x:number)=>{let expr=(item.equation||'2*x+1').replace(/\^/g,'**').replace(/\b(sin|cos|tan)\s*\(/gi,(_,fn:string)=>`Math.${fn.toLowerCase()}(`).replace(/\bX\b/g,'x');if(!/^[0-9x+*/().,\s^\-Mathsincota]+$/.test(expr)||/Math\.(?!sin|cos|tan)/.test(expr))return NaN;try{return Function('x',`'use strict'; return (${expr});`)(x) as number;}catch{return NaN;}};
     const plotPoints=item.graphPoints?.length?item.graphPoints:null;
-    if(plotPoints){plotPoints.forEach((pt,i)=>{const px=left+(pt.x/xmax)*w,py=top+h-(pt.y/ymax)*h;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);});ctx.stroke();ctx.fillStyle=red;plotPoints.forEach((pt)=>{const px=left+(pt.x/xmax)*w,py=top+h-(pt.y/ymax)*h;ctx.beginPath();ctx.arc(px,py,5,0,Math.PI*2);ctx.fill();});}
+    if(plotPoints){plotPoints.forEach((pt,i)=>{const px=left+(pt.x/xmax)*w,py=top+h-(pt.y/ymax)*h;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);});ctx.stroke();
+      // Dashed projection guides from each plotted point to both axes.
+      ctx.save();ctx.strokeStyle='#64748b';ctx.lineWidth=1.4;ctx.setLineDash([5,4]);
+      plotPoints.forEach((pt)=>{const px=left+(pt.x/xmax)*w,py=top+h-(pt.y/ymax)*h;ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px,top+h);ctx.moveTo(px,py);ctx.lineTo(left,py);ctx.stroke();});ctx.restore();
+      ctx.fillStyle=red;plotPoints.forEach((pt)=>{const px=left+(pt.x/xmax)*w,py=top+h-(pt.y/ymax)*h;ctx.beginPath();ctx.arc(px,py,5,0,Math.PI*2);ctx.fill();label(ctx,`(${pt.x}, ${pt.y})`,px+7,py-7,red,11);});} 
     else {for(let px=0;px<=w;px++){const x=px/w*xmax;let y=0;if(item.diagram==='graph-st')y=x*(ymax/xmax)*0.72;else if(item.diagram==='graph-vt')y=(x/xmax<.38?ymax*.72:x/xmax<.62?ymax*.72:Math.min(ymax,x/xmax*ymax*.8));else if(item.diagram==='graph-uv')y=Math.min(ymax,Math.max(0,x*0.7));else y=safeFunction(x);const py=functionGraph?top+h/2-(y/ymax)*(h/2):top+h-(y/ymax)*h;if(!Number.isFinite(y)||Math.abs(y)>ymax*4){ctx.moveTo(left+px,top+h);continue;}if(px===0)ctx.moveTo(left+px,py);else ctx.lineTo(left+px,py);}ctx.stroke();}
     label(ctx,item.diagram==='graph-st'?'Đồ thị s–t':item.diagram==='graph-vt'?'Đồ thị v–t':item.diagram==='graph-uv'?'Đồ thị U–I':`y = ${item.equation||'2*x+1'}`,-150,-135,blue,17);label(ctx,item.diagram==='graph-st'?'s (m)':item.diagram==='graph-vt'?'v (m/s)':item.diagram==='graph-uv'?'U (V)':'y',left-5,top-24,gray,13);label(ctx,item.diagram==='graph-uv'?'I (A)':'x / t',left+w-75,top+h+25,gray,13);
     label(ctx,`Trục x: 0–${xmax} · trục y: 0–${ymax}`,-130,145,gray,13);
