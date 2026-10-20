@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 import {
   ArrowDownRight, ArrowUpRight, BookOpen, Check, ChevronRight, Circle, Download,
   Eraser, FlaskConical, Hand, Minus, MousePointer2, Pencil, Printer, Redo2,
@@ -17,6 +18,8 @@ type BoardItem =
   | { id: string; kind: 'diagram'; diagram: Diagram; at: Point; scale: number; rotation?: number; equation?: string; switchClosed?: boolean; graphPoints?: Point[] };
 
 type Formula = { group: string; name: string; expression: string; note: string };
+type BoardCatalogEntry = { id: string; entry_type: 'formula' | 'template'; subject_code: string; grade: number; title: string; content: string; description: string; status: string; sort_order: number };
+const boardSubjects = [{code:'NGUVAN',name:'Ngữ văn'},{code:'TOAN',name:'Toán'},{code:'TIENGANH',name:'Tiếng Anh'},{code:'GDCD',name:'Giáo dục công dân'},{code:'LS_DIA',name:'Lịch sử và Địa lí'},{code:'KHTN',name:'Khoa học tự nhiên'},{code:'CONGNGHE',name:'Công nghệ'},{code:'TINHOC',name:'Tin học'},{code:'GDTC',name:'Giáo dục thể chất'},{code:'AMNHAC',name:'Nghệ thuật – Âm nhạc'},{code:'MITHUAT',name:'Nghệ thuật – Mĩ thuật'},{code:'HDTN_HN',name:'Hoạt động trải nghiệm, hướng nghiệp'},{code:'DIA_PHUONG',name:'Nội dung giáo dục địa phương'}];
 const W = 1200, H = 700;
 const formulas: Formula[] = [
   { group: 'Lớp 6–7 · Đo lường và chuyển động', name: 'Tốc độ', expression: 'v = s / t', note: 'Công thức gốc: v là tốc độ; s là quãng đường; t là thời gian' },
@@ -233,6 +236,8 @@ export default function TeachingBoard() {
   const [grid, setGrid] = useState(true);
   const [paper, setPaper] = useState<'white'|'dark'|'green'>('white');
   const [formulaSearch, setFormulaSearch] = useState('');
+  const [subjectCode, setSubjectCode] = useState('KHTN');
+  const [catalogEntries, setCatalogEntries] = useState<BoardCatalogEntry[]>([]);
   const [equationInput, setEquationInput] = useState('2*x+1');
   const [graphCoordinates, setGraphCoordinates] = useState('0,0; 2,20; 4,40; 6,60; 8,80; 10,100');
   const [classFilter, setClassFilter] = useState('Tất cả');
@@ -263,7 +268,7 @@ export default function TeachingBoard() {
       } else if(item.kind==='line'){
         ctx.strokeStyle=item.color;ctx.lineWidth=item.width;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(item.from.x,item.from.y);ctx.lineTo(item.to.x,item.to.y);ctx.stroke();
       } else if(item.kind==='arrow') arrow(ctx,item.from,item.to,item.color,item.width,Math.max(9,item.width*3.5));
-      else if(item.kind==='text'){ctx.fillStyle=item.color;ctx.font=`600 ${item.size}px system-ui, sans-serif`;ctx.fillText(item.text,item.at.x,item.at.y);}
+      else if(item.kind==='text'){ctx.fillStyle=item.color;ctx.font=`600 ${item.size}px system-ui, sans-serif`;item.text.split(/\\n|\n/).forEach((line,index)=>ctx.fillText(line,item.at.x,item.at.y+index*(item.size+7)));}
       else drawDiagram(ctx,item,settings);
       if(item.id===selectedId && 'at' in item){ctx.save();ctx.strokeStyle='#7c3aed';ctx.lineWidth=2;ctx.setLineDash([5,4]);ctx.strokeRect(item.at.x-115,item.at.y-105,230,210);ctx.restore();}
     });
@@ -282,6 +287,12 @@ export default function TeachingBoard() {
     setLoaded(true);
   },[]);
   useEffect(()=>{if(loaded){try{localStorage.setItem('khtnso-teaching-board-v2',JSON.stringify({items,lessonTitle,settings}));}catch{/* storage may be full */}}},[items,lessonTitle,settings,loaded]);
+  useEffect(()=>{
+    let active=true;
+    async function loadCatalog(){ if(!supabase)return; const {data}=await supabase.from('board_catalog').select('id,entry_type,subject_code,grade,title,content,description,status,sort_order').eq('status','published').order('sort_order').limit(500); if(active&&data)setCatalogEntries(data as BoardCatalogEntry[]); }
+    void loadCatalog(); return()=>{active=false;};
+  },[]);
+
   useEffect(()=>{const resize=()=>drawScene();window.addEventListener('resize',resize);return()=>window.removeEventListener('resize',resize);},[drawScene]);
 
   const pointFromEvent = (e: React.PointerEvent<HTMLCanvasElement>): Point => {
@@ -369,19 +380,23 @@ export default function TeachingBoard() {
   const clearBoard=()=>{if(!items.length)return;if(window.confirm('Xóa toàn bộ nội dung trên bảng?')){setItems([]);setRedoItems([]);setMessage('Đã xóa bảng.');}};
   const saveBoard=()=>{try{localStorage.setItem('khtnso-teaching-board-v2',JSON.stringify({items,lessonTitle,settings}));setMessage('Đã lưu bảng trên trình duyệt này.');}catch{setMessage('Không thể lưu vào trình duyệt; hãy xuất PNG để lưu bản vẽ.');}};
   const exportPng=()=>{const canvas=canvasRef.current;if(!canvas)return;const a=document.createElement('a');a.href=canvas.toDataURL('image/png');a.download=`${lessonTitle.trim().replace(/[^\p{L}\p{N}-]+/gu,'-')||'bang-vat-ly'}.png`;a.click();setMessage('Đã xuất ảnh PNG.');};
-  const filteredFormulas=formulas.filter(f=>(classFilter==='Tất cả'||f.group.startsWith(classFilter))&&`${f.name} ${f.expression} ${f.group}`.toLowerCase().includes(formulaSearch.toLowerCase()));
+  const filteredFormulas=subjectCode==='KHTN' ? formulas.filter(f=>(classFilter==='Tất cả'||f.group.startsWith(classFilter))&&`${f.name} ${f.expression} ${f.group}`.toLowerCase().includes(formulaSearch.toLowerCase())) : []; 
+  const selectedCatalog = catalogEntries.filter(e=>e.subject_code===subjectCode && (e.grade===0 || classFilter==='Tất cả' || e.grade===Number(classFilter.replace('Lớp ',''))));
+  const customFormulas = selectedCatalog.filter(e=>e.entry_type==='formula' && `${e.title} ${e.content} ${e.description}`.toLowerCase().includes(formulaSearch.toLowerCase()));
+  const customTemplates = selectedCatalog.filter(e=>e.entry_type==='template' && `${e.title} ${e.content} ${e.description}`.toLowerCase().includes(formulaSearch.toLowerCase()));
   const toolBtn=(id:Tool,labelText:string,Icon:typeof Pencil)=><button key={id} onClick={()=>setTool(id)} title={labelText} aria-pressed={tool===id} className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold border transition ${tool===id?'border-blue-600 bg-blue-600 text-white shadow':'border-slate-200 bg-white text-slate-700 hover:bg-sky-50'}`}><Icon size={17}/><span className="hidden sm:inline">{labelText}</span></button>;
 
   return <main className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-violet-50 text-slate-800">
     <div className="mx-auto max-w-[1600px] px-3 py-4 sm:px-5 sm:py-6">
       <header className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-3xl bg-gradient-to-r from-indigo-700 via-blue-600 to-cyan-500 p-5 text-white shadow-xl sm:p-7">
-        <div className="min-w-0"><p className="text-xs font-black tracking-[.2em] text-cyan-100">KHTN SỐ · BẢNG DẠY HỌC SỐ</p><h1 className="mt-2 text-2xl font-black sm:text-4xl">Bảng Vật lý tương tác</h1><p className="mt-2 max-w-3xl text-sm text-white/90 sm:text-base">Viết, vẽ, giải bài và xây dựng tiến trình bài giảng trực tiếp — không phải trình chiếu slide.</p></div>
+        <div className="min-w-0"><p className="text-xs font-black tracking-[.2em] text-cyan-100">KHTN SỐ · BẢNG DẠY HỌC SỐ</p><h1 className="mt-2 text-2xl font-black sm:text-4xl">Bảng tương tác đa môn</h1><p className="mt-2 max-w-3xl text-sm text-white/90 sm:text-base">Viết, vẽ, giải bài và xây dựng tiến trình bài giảng trực tiếp — không phải trình chiếu slide.</p></div>
         <div className="flex flex-wrap gap-2"><button onClick={saveBoard} className="rounded-xl border border-white/30 bg-white/15 px-3 py-2 text-sm font-bold hover:bg-white/25"><Save className="mr-1 inline" size={16}/>Lưu bảng</button><button onClick={exportPng} className="rounded-xl bg-white px-3 py-2 text-sm font-bold text-blue-700 hover:bg-cyan-50"><Download className="mr-1 inline" size={16}/>Xuất PNG</button></div>
       </header>
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
         <label className="rounded-2xl border border-sky-100 bg-white p-3 shadow-sm sm:col-span-2"><span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Tên bài học / tiết dạy</span><input value={lessonTitle} onChange={e=>setLessonTitle(e.target.value)} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-lg font-bold outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" placeholder="Nhập tên bài học…"/></label>
         <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-sky-100 bg-white p-3 shadow-sm"><span className="mr-1 text-xs font-bold uppercase tracking-wide text-slate-500">Nền bảng</span><button onClick={()=>setPaper('white')} className={`rounded-lg border px-3 py-2 text-sm font-bold ${paper==='white'?'border-blue-600 bg-blue-50':'border-slate-200'}`}>Trắng</button><button onClick={()=>setPaper('green')} className={`rounded-lg border px-3 py-2 text-sm font-bold ${paper==='green'?'border-emerald-600 bg-emerald-50':'border-slate-200'}`}>Xanh</button><button onClick={()=>setPaper('dark')} className={`rounded-lg border px-3 py-2 text-sm font-bold ${paper==='dark'?'border-slate-700 bg-slate-200':'border-slate-200'}`}>Tối</button></div>
       </div>
+      <section className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-sky-100 bg-white p-4 shadow-sm"><label className="text-sm font-black text-slate-700" htmlFor="board-subject">Môn học đang dạy</label><select id="board-subject" value={subjectCode} onChange={e=>setSubjectCode(e.target.value)} className="min-w-[240px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">{boardSubjects.map(s=><option key={s.code} value={s.code}>{s.name}</option>)}</select><span className="text-xs text-slate-500">Công thức và mẫu do Admin xuất bản sẽ lọc theo môn đã chọn.</span><a href="/admin/board-config" className="ml-auto rounded-xl border border-blue-200 px-3 py-2 text-sm font-bold text-blue-800 hover:bg-blue-50">CMS mẫu bảng ↗</a></section>
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
         <section className="min-w-0 overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-lg">
           <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 p-3 sm:p-4">
@@ -414,16 +429,17 @@ export default function TeachingBoard() {
             <div className="mt-3 rounded-2xl border border-blue-200 bg-blue-50 p-3"><h3 className="font-black text-blue-900">Vẽ đồ thị theo tọa độ điểm</h3><p className="mt-1 text-xs text-blue-800">Nhập các cặp (x,y), cách nhau bằng dấu chấm phẩy. Ví dụ: 0,0; 2,20; 4,40. Với s–t, x là t và y là s; với v–t, x là t và y là v.</p><textarea value={graphCoordinates} onChange={e=>setGraphCoordinates(e.target.value)} rows={3} className="mt-2 w-full rounded-lg border border-blue-200 bg-white p-2 text-sm" aria-label="Danh sách tọa độ điểm đồ thị"/><button onClick={applyGraphCoordinates} className="mt-2 w-full rounded-xl bg-blue-700 px-3 py-2 text-sm font-black text-white hover:bg-blue-800">Vẽ / cập nhật đường biểu diễn</button><p className="mt-2 text-xs text-blue-800">Sau khi vẽ: kéo điểm đỏ để sửa một điểm; kéo đoạn xanh để di chuyển riêng đường biểu diễn.</p></div>
             <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">Lưu ý: tham số điều khiển tác động lên các hình mẫu được vẽ lại; đây là công cụ minh họa giảng dạy, chưa thay thế phần mềm mô phỏng quang học/điện học định lượng chuyên dụng.</p>
           </section>
-          <section className="rounded-3xl border border-violet-100 bg-white p-4 shadow-lg"><div className="flex items-center justify-between gap-2"><div><h2 className="text-lg font-black">Hình mẫu Vật lý</h2><p className="mt-1 text-xs text-slate-500">Chọn / di chuyển để kéo hình và nét; kéo nút ở hai đầu đoạn thẳng/dây để đổi chiều dài, kéo điểm trên nét đồ thị để sửa từng đoạn. Dùng Đoạn thẳng hoặc Véc tơ để nối linh kiện.</p></div><button onClick={()=>setShowLibrary(v=>!v)} className="rounded-lg border p-2" title="Thu gọn/mở rộng thư viện">{showLibrary?<ChevronRight size={18} className="rotate-90"/>:<ChevronRight size={18}/>}</button></div>
+          <section className="rounded-3xl border border-violet-100 bg-white p-4 shadow-lg"><div className="flex items-center justify-between gap-2"><div><h2 className="text-lg font-black">Hình mẫu KHTN</h2><p className="mt-1 text-xs text-slate-500">Chọn / di chuyển để kéo hình và nét; kéo nút ở hai đầu đoạn thẳng/dây để đổi chiều dài, kéo điểm trên nét đồ thị để sửa từng đoạn. Dùng Đoạn thẳng hoặc Véc tơ để nối linh kiện.</p></div><button onClick={()=>setShowLibrary(v=>!v)} className="rounded-lg border p-2" title="Thu gọn/mở rộng thư viện">{showLibrary?<ChevronRight size={18} className="rotate-90"/>:<ChevronRight size={18}/>}</button></div>
             {showLibrary&&<div className="mt-4 grid grid-cols-2 gap-2">{[
               ['convex-lens','Thấu kính hội tụ'],['concave-lens','Thấu kính phân kỳ'],['prism','Lăng kính'],['dispersion','Tán sắc ánh sáng'],['mirror','Phản xạ ánh sáng'],['refraction','Khúc xạ ánh sáng'],['circuit','Mạch điện mẫu'],['force-vector','Các véc tơ lực'],['graph-st','Đồ thị s–t'],['graph-vt','Đồ thị v–t'],['graph-uv','Đồ thị U–I'],['graph-function','Đồ thị phương trình'],['harmonic','Dao động điều hòa'],['unit-circle','Vòng tròn lượng giác'],
             ].map(([d,t])=><button key={d} onClick={()=>addDiagram(d as Diagram)} className="rounded-xl border border-slate-200 bg-gradient-to-br from-white to-sky-50 p-3 text-left text-sm font-bold transition hover:border-blue-400 hover:shadow-sm"><span className="mb-2 grid h-8 w-8 place-items-center rounded-lg bg-blue-100 text-blue-700">{d==='circuit'?<Zap size={17}/>:d.includes('lens')||d==='prism'||d==='dispersion'||d==='refraction'||d==='mirror'?<Circle size={17}/>:<ArrowUpRight size={17}/>}</span>{t}<span className="mt-1 block text-xs font-normal text-slate-500">Chèn vào bảng</span></button>)}</div>}
             <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">Hình mẫu là sơ đồ giảng dạy có thể ghi chú thêm bằng bút. Với thí nghiệm định lượng, hãy đối chiếu số liệu và quy ước dấu của bài học.</p>
           </section>
+          <section className="rounded-3xl border border-emerald-100 bg-white p-4 shadow-lg"><div className="flex items-center justify-between gap-2"><div><h2 className="text-lg font-black">Mẫu nội dung đa môn</h2><p className="mt-1 text-xs text-slate-500">Mẫu được Admin xuất bản cho môn đang chọn.</p></div><BookOpen className="text-emerald-600" size={22}/></div><div className="mt-3 space-y-2">{customTemplates.map(t=><button key={t.id} onClick={()=>{setItems(old=>[...old,{id:uid(),kind:'text',at:{x:55,y:90+old.filter(i=>i.kind==='text').length*38},text:`${t.title}\n${t.content}`,color,size:19}]);setRedoItems([]);setMessage(`Đã chèn mẫu “${t.title}” lên bảng.`);}} className="w-full rounded-xl border border-slate-200 p-3 text-left hover:border-emerald-300 hover:bg-emerald-50"><span className="block font-bold">{t.title}</span><span className="mt-1 block whitespace-pre-line text-xs text-slate-600">{t.content}</span></button>)}{!customTemplates.length&&<p className="rounded-xl bg-slate-50 p-3 text-sm text-slate-500">Chưa có mẫu xuất bản cho môn này. Admin có thể thêm trong CMS bảng tương tác.</p>}</div></section>
           <section className="rounded-3xl border border-sky-100 bg-white p-4 shadow-lg"><div className="flex items-center justify-between gap-2"><div><h2 className="text-lg font-black">Công thức nhanh</h2><p className="mt-1 text-xs text-slate-500">Nhấn để ghi công thức lên bảng.</p></div><BookOpen className="text-sky-600" size={22}/></div>
             <input value={formulaSearch} onChange={e=>setFormulaSearch(e.target.value)} placeholder="Tìm công thức…" className="mt-3 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-500"/>
             <select value={classFilter} onChange={e=>setClassFilter(e.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"><option>Tất cả</option><option>Lớp 6</option><option>Lớp 7</option><option>Lớp 8</option><option>Lớp 9</option><option>Lớp 10</option><option>Lớp 11</option><option>Lớp 12</option></select>
-            <div className="mt-3 max-h-[410px] space-y-2 overflow-y-auto pr-1">{filteredFormulas.map(f=><button key={f.name} onClick={()=>addFormula(f)} className="w-full rounded-xl border border-slate-200 p-3 text-left transition hover:border-violet-300 hover:bg-violet-50"><span className="block text-xs font-semibold text-slate-500">{f.group}</span><span className="mt-1 block font-bold">{f.name}</span><span className="mt-1 block text-lg font-black text-violet-700">{f.expression}</span><span className="mt-1 block text-xs leading-relaxed text-slate-500">{f.note}</span></button>)}{!filteredFormulas.length&&<p className="rounded-xl bg-slate-50 p-3 text-sm text-slate-500">Không tìm thấy công thức phù hợp.</p>}</div>
+            <div className="mt-3 max-h-[410px] space-y-2 overflow-y-auto pr-1">{filteredFormulas.map(f=><button key={f.name} onClick={()=>addFormula(f)} className="w-full rounded-xl border border-slate-200 p-3 text-left transition hover:border-violet-300 hover:bg-violet-50"><span className="block text-xs font-semibold text-slate-500">{f.group}</span><span className="mt-1 block font-bold">{f.name}</span><span className="mt-1 block text-lg font-black text-violet-700">{f.expression}</span><span className="mt-1 block text-xs leading-relaxed text-slate-500">{f.note}</span></button>)}{customFormulas.map(f=><button key={f.id} onClick={()=>addFormula({group:`${boardSubjects.find(s=>s.code===f.subject_code)?.name||f.subject_code}${f.grade?` · Lớp ${f.grade}`:''}`,name:f.title,expression:f.content,note:f.description})} className="w-full rounded-xl border border-emerald-200 bg-emerald-50/40 p-3 text-left transition hover:border-violet-300 hover:bg-violet-50"><span className="block text-xs font-semibold text-slate-500">{boardSubjects.find(s=>s.code===f.subject_code)?.name||f.subject_code}{f.grade?` · Lớp ${f.grade}`:''} · CMS</span><span className="mt-1 block font-bold">{f.title}</span><span className="mt-1 block whitespace-pre-wrap text-lg font-black text-violet-700">{f.content}</span><span className="mt-1 block text-xs leading-relaxed text-slate-500">{f.description}</span></button>)}{!filteredFormulas.length&&!customFormulas.length&&<p className="rounded-xl bg-slate-50 p-3 text-sm text-slate-500">Không tìm thấy công thức phù hợp.</p>}</div>
           </section>
         </aside>
       </div>
