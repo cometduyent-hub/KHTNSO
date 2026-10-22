@@ -1,20 +1,31 @@
-# KHTN SỐ V20 — khôi phục đa phương tiện + 5 cuộc leo núi
+# KHTN SỐ V21 — bổ sung 3 thí nghiệm đo lường
 
-## Tệp cập nhật (chỉ 2 tệp)
-- `src/app/admin/exams/page.tsx`: giữ trường nhập ý a–d của câu Đúng/Sai và bổ sung dán ảnh từ clipboard vào ô Nội dung, chọn tệp ảnh/video/âm thanh, dán URL và ghi âm trực tiếp qua microphone.
-- `src/app/game/page.tsx`: thêm 5 lựa chọn leo núi: KHTN, Anh văn, Toán, Văn sử địa, Tổng hợp.
+## Mục tiêu
+Bổ sung 3 trang thí nghiệm vào khu vực `/practice`, không đổi cấu trúc database, không thêm dependency npm và không sửa chức năng lưu báo cáo Cloud / CSV / in PDF hiện có.
 
-## Cập nhật trên GitHub nhánh main
-1. Sao lưu hai tệp hiện tại trong GitHub trước khi sửa.
-2. Mở nhánh `main` của repository hiện có.
-3. Thay đúng hai tệp theo cùng đường dẫn trong gói này; không xóa hoặc đổi tên tệp/bảng khác.
-4. Commit vào `main`, đợi Vercel triển khai.
+## Tệp trong gói
+- `src/app/practice/page.tsx` — phiên bản phòng thực hành có sẵn liên kết mô phỏng bút chì từ gói V19, đồng thời bổ sung thẻ mở 3 mô phỏng mới.
+- `src/app/practice/stone-volume/page.tsx` — đo thể tích viên đá/sỏi bằng phương pháp dời chỗ của nước.
+- `src/app/practice/table-length/page.tsx` — đo chiều dài bàn, nhập số đọc ở đầu/cuối thước và đổi cm/dm.
+- `src/app/practice/bowl-circumference/page.tsx` — đo chu vi miệng chén bằng dây mềm.
 
-## Lưu ý kỹ thuật
-- Không có thay đổi schema Supabase, không thêm package.
-- Clipboard hỗ trợ ảnh được clipboard cung cấp dưới dạng tệp; URL có đuôi tệp ảnh/âm thanh/video được nhận diện khi dán vào ô Nội dung.
-- Tệp nhỏ được nhúng dạng data URL trong `question_bank.media`. Đây là phương án tương thích schema hiện tại, nhưng không tối ưu cho video lớn; với tệp lớn nên lưu ở Supabase Storage hoặc dịch vụ lưu trữ được phép rồi dán URL. Nếu API/DB giới hạn kích thước payload, hãy dùng URL.
-- Ghi âm cần cấp quyền microphone và trang chạy qua HTTPS (Vercel mặc định HTTPS). Dừng ghi sẽ đính kèm bản ghi âm.
-- Năm lựa chọn môn học không thêm cột vào database. Để lọc đúng các thử thách, gắn nhãn môn học vào tiêu đề vòng trong CMS · Game, ví dụ `[KHTN] ...`, `[Anh văn] ...`, `[Toán] ...`, `[Văn sử địa] ...`. `Tổng hợp` hiển thị mọi thử thách đã xuất bản. Nếu chưa gắn nhãn, lựa chọn môn có thể hiện 0 vòng; không tự ý đổi dữ liệu hiện có.
-- Cần kiểm tra sau deploy: thêm câu mới và câu Đúng/Sai, dán ảnh, chọn video/âm thanh, ghi âm, lưu/mở lại câu hỏi; mở `/game`, chọn từng môn và thử mở vòng.
-- Chưa thể xác nhận build/deploy production từ môi trường này; cần theo dõi log Vercel sau commit.
+## Cập nhật trực tiếp vào nhánh main
+1. Tải ZIP và giải nén.
+2. Mở repository GitHub hiện tại, chọn nhánh `main`.
+3. Tạo 3 thư mục và thêm 3 tệp `page.tsx` mới theo đúng đường dẫn trong ZIP.
+4. Với `src/app/practice/page.tsx`, **không thay thế mù quáng nếu nhánh main đã có thay đổi mới hơn**. Ghép riêng thẻ `<section>` có tiêu đề `Các bài đo lường khác` vào trang thực hành hiện tại, trước thẻ đóng `</main>`. Giữ nguyên toàn bộ phần import, state, hàm `save`, `csv`, và liên kết mô phỏng bút chì đang có.
+5. Commit vào `main`; đợi Vercel deploy.
+6. Kiểm tra các địa chỉ:
+   - `/practice`
+   - `/practice/stone-volume`
+   - `/practice/table-length`
+   - `/practice/bowl-circumference`
+   - `/practice/pencil-circumference` (mô phỏng bút chì hiện tại)
+
+## Lưu ý kỹ thuật và khoa học
+- Không có migration SQL và không cần thay đổi bảng Supabase.
+- Ba trang mới là mô phỏng tương tác dùng SVG/HTML và số liệu mô hình, không phải mô hình 3D vật lý hoàn chỉnh. Mực nước/chiều dài/đường kính là tham số mô phỏng để học sinh luyện thao tác đọc số đo.
+- Thí nghiệm thể tích dùng công thức V_vật = V_sau − V_đầu; cần bảo đảm vật chìm hoàn toàn và nước không tràn.
+- Thí nghiệm bàn thể hiện cách lấy số đọc cuối trừ số đọc đầu; khi đo thực tế cần đặt vạch 0 đúng đầu vật hoặc hiệu chỉnh vị trí đầu thước.
+- Thí nghiệm chén dùng dây mềm không co giãn, ôm sát miệng chén rồi duỗi thẳng để đọc chiều dài.
+- Chưa chạy build toàn dự án hoặc kiểm thử trên Vercel/Supabase. Sau commit cần xem log deployment trước khi coi là hoàn tất.
