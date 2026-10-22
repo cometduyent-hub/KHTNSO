@@ -9,11 +9,12 @@ import {
 } from 'lucide-react';
 
 type Point = { x: number; y: number };
-type Tool = 'select' | 'pen' | 'eraser' | 'line' | 'arrow' | 'text' | 'graph';
+type Tool = 'select' | 'pen' | 'eraser' | 'line' | 'arrow' | 'dashed-line' | 'circle' | 'ellipse' | 'triangle' | 'rectangle' | 'cube' | 'cuboid' | 'pyramid' | 'cylinder' | 'cone' | 'sphere' | 'text' | 'graph';
 type Diagram = 'convex-lens' | 'concave-lens' | 'prism' | 'dispersion' | 'mirror' | 'circuit' | 'force-vector' | 'refraction' | 'graph-st' | 'graph-vt' | 'graph-uv' | 'graph-function' | 'harmonic' | 'unit-circle' | 'battery' | 'resistor' | 'lamp' | 'switch' | 'ammeter' | 'voltmeter' | 'wire';
 type BoardItem =
   | { id: string; kind: 'path'; points: Point[]; color: string; width: number; erase?: boolean; graph?: boolean }
   | { id: string; kind: 'line' | 'arrow'; from: Point; to: Point; color: string; width: number }
+  | { id: string; kind: 'shape'; shape: 'dashed-line' | 'circle' | 'ellipse' | 'triangle' | 'rectangle' | 'cube' | 'cuboid' | 'pyramid' | 'cylinder' | 'cone' | 'sphere'; from: Point; to: Point; color: string; width: number }
   | { id: string; kind: 'text'; at: Point; text: string; color: string; size: number; graphSourceId?: string }
   | { id: string; kind: 'diagram'; diagram: Diagram; at: Point; scale: number; rotation?: number; equation?: string; switchClosed?: boolean; graphPoints?: Point[] };
 
@@ -75,6 +76,40 @@ function label(ctx: CanvasRenderingContext2D, text: string, x: number, y: number
   ctx.fillStyle = color; ctx.font = `600 ${size}px system-ui, sans-serif`; ctx.fillText(text, x, y);
 }
 type BoardSettings = { focalLength:number; objectDistance:number; prismAngle:number; incidentAngle:number; refractiveIndex:number; refractionDirection:string; objectHeight:number; graphXMax:number; graphYMax:number; graphStep:number; graphMode:string; amplitude:number; omega:number; phase:number; prismRayColor:string };
+function drawGeometryShape(ctx: CanvasRenderingContext2D, shape: Extract<BoardItem,{kind:'shape'}>['shape'], from:Point, to:Point, color:string, width:number, preview=false) {
+  const left=Math.min(from.x,to.x), top=Math.min(from.y,to.y), w=Math.max(8,Math.abs(to.x-from.x)), h=Math.max(8,Math.abs(to.y-from.y));
+  const cx=left+w/2, cy=top+h/2, dx=w*0.28, dy=h*0.22;
+  ctx.save(); ctx.strokeStyle=color; ctx.lineWidth=width; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.setLineDash(shape==='dashed-line'?[9,7]:[]); ctx.beginPath();
+  if(shape==='dashed-line'){ctx.moveTo(from.x,from.y);ctx.lineTo(to.x,to.y);}
+  else if(shape==='circle'||shape==='ellipse'){const rx=w/2,ry=h/2;ctx.ellipse(cx,cy,shape==='circle'?Math.max(rx,ry):rx,shape==='circle'?Math.max(rx,ry):ry,0,0,Math.PI*2);}
+  else if(shape==='triangle'){ctx.moveTo(cx,top);ctx.lineTo(left+w,top+h);ctx.lineTo(left,top+h);ctx.closePath();}
+  else if(shape==='rectangle'){ctx.rect(left,top,w,h);}
+  else if(shape==='cube'||shape==='cuboid'){
+    ctx.moveTo(left,top+dy);ctx.lineTo(left+w-dx,top+dy);ctx.lineTo(left+w-dx,top+h);ctx.lineTo(left,top+h);ctx.closePath();
+    ctx.moveTo(left,top+dy);ctx.lineTo(left+dx,top);ctx.lineTo(left+w,top);ctx.lineTo(left+w-dx,top+dy);
+    ctx.moveTo(left+w,top);ctx.lineTo(left+w,top+h-dy);ctx.lineTo(left+w-dx,top+h);
+    ctx.moveTo(left+dx,top);ctx.lineTo(left+dx,top+h-dy);ctx.lineTo(left,top+h);
+    ctx.save();ctx.setLineDash([6,5]);ctx.moveTo(left+dx,top+h-dy);ctx.lineTo(left+w,top+h-dy);ctx.moveTo(left+dx,top+h-dy);ctx.lineTo(left+w-dx,top+h);ctx.stroke();ctx.restore();
+  }
+  else if(shape==='pyramid'){
+    ctx.moveTo(cx,top);ctx.lineTo(left+w,top+h-dy);ctx.lineTo(cx,top+h);ctx.lineTo(left,top+h-dy);ctx.closePath();
+    ctx.moveTo(cx,top);ctx.lineTo(cx,top+h);ctx.moveTo(cx,top);ctx.lineTo(left+w,top+h-dy);ctx.moveTo(cx,top);ctx.lineTo(left,top+h-dy);
+    ctx.save();ctx.setLineDash([6,5]);ctx.moveTo(left,top+h-dy);ctx.lineTo(left+w,top+h-dy);ctx.stroke();ctx.restore();
+  }
+  else if(shape==='cylinder'){
+    ctx.ellipse(cx,top+dy,w/2,dy,0,0,Math.PI*2);ctx.moveTo(left,top+dy);ctx.lineTo(left,top+h-dy);ctx.moveTo(left+w,top+dy);ctx.lineTo(left+w,top+h-dy);ctx.ellipse(cx,top+h-dy,w/2,dy,0,Math.PI,Math.PI*2);
+    ctx.save();ctx.setLineDash([6,5]);ctx.beginPath();ctx.ellipse(cx,top+h-dy,w/2,dy,0,Math.PI*2,Math.PI);ctx.stroke();ctx.restore();
+  }
+  else if(shape==='cone'){
+    ctx.moveTo(cx,top);ctx.lineTo(left+w,top+h-dy);ctx.ellipse(cx,top+h-dy,w/2,dy,0,0,Math.PI);ctx.moveTo(cx,top);ctx.lineTo(left,top+h-dy);
+    ctx.save();ctx.setLineDash([6,5]);ctx.beginPath();ctx.ellipse(cx,top+h-dy,w/2,dy,0,Math.PI,Math.PI*2);ctx.stroke();ctx.restore();
+  }
+  else if(shape==='sphere'){
+    ctx.ellipse(cx,cy,w/2,h/2,0,0,Math.PI*2);ctx.moveTo(left,cy);ctx.ellipse(cx,cy,w/2,h*0.18,0,0,Math.PI*2);ctx.moveTo(cx,top);ctx.ellipse(cx,cy,w*0.18,h/2,0,0,Math.PI*2);
+  }
+  ctx.stroke(); ctx.restore();
+}
+
 function drawDiagram(ctx: CanvasRenderingContext2D, item: Extract<BoardItem, {kind:'diagram'}>, settings:BoardSettings) {
   ctx.save(); ctx.translate(item.at.x, item.at.y); ctx.rotate((item.rotation||0)*Math.PI/180); ctx.scale(item.scale, item.scale);
   const blue = '#2563eb', red = '#dc2626', purple = '#7c3aed', gray = '#475569', green = '#059669';
@@ -267,13 +302,18 @@ export default function TeachingBoard() {
         ctx.save();ctx.strokeStyle=item.erase?bg:item.color;ctx.lineWidth=item.erase?Math.max(22,item.width*4):item.width;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(item.points[0].x,item.points[0].y);item.points.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));if(item.points.length===1)ctx.lineTo(item.points[0].x+.1,item.points[0].y+.1);ctx.stroke();ctx.restore();
       } else if(item.kind==='line'){
         ctx.strokeStyle=item.color;ctx.lineWidth=item.width;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(item.from.x,item.from.y);ctx.lineTo(item.to.x,item.to.y);ctx.stroke();
+      } else if(item.kind==='shape'){
+        drawGeometryShape(ctx,item.shape,item.from,item.to,item.color,item.width);
       } else if(item.kind==='arrow') arrow(ctx,item.from,item.to,item.color,item.width,Math.max(9,item.width*3.5));
       else if(item.kind==='text'){ctx.fillStyle=item.color;ctx.font=`600 ${item.size}px system-ui, sans-serif`;item.text.split(/\\n|\n/).forEach((line,index)=>ctx.fillText(line,item.at.x,item.at.y+index*(item.size+7)));}
       else drawDiagram(ctx,item,settings);
       if(item.id===selectedId && 'at' in item){ctx.save();ctx.strokeStyle='#7c3aed';ctx.lineWidth=2;ctx.setLineDash([5,4]);ctx.strokeRect(item.at.x-115,item.at.y-105,230,210);ctx.restore();}
     });
     const active=activeRef.current;
-    if(active?.length){ctx.strokeStyle=tool==='eraser'?bg:color;ctx.lineWidth=tool==='eraser'?Math.max(22,lineWidth*4):lineWidth;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(active[0].x,active[0].y);active.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));ctx.stroke();}
+    if(active?.length){
+      if(['dashed-line','circle','ellipse','triangle','rectangle','cube','cuboid','pyramid','cylinder','cone','sphere'].includes(tool)&&active.length){const a=active[0],b=active[active.length-1];drawGeometryShape(ctx,tool as Extract<BoardItem,{kind:'shape'}>['shape'],a,b,color,lineWidth,true);}
+      else {ctx.strokeStyle=tool==='eraser'?bg:color;ctx.lineWidth=tool==='eraser'?Math.max(22,lineWidth*4):lineWidth;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(active[0].x,active[0].y);active.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));ctx.stroke();}
+    }
   },[items,grid,paper,tool,color,lineWidth,settings,selectedId]);
   useEffect(()=>{drawScene();},[drawScene]);
   useEffect(()=>{
@@ -335,6 +375,7 @@ export default function TeachingBoard() {
         const found=[...items].reverse().find(it=>{
           if('at' in it)return Math.abs(it.at.x-p.x)<190&&Math.abs(it.at.y-p.y)<165;
           if(it.kind==='line'||it.kind==='arrow')return pointSegmentDistance(p,it.from,it.to)<18;
+          if(it.kind==='shape'){const cx=(it.from.x+it.to.x)/2,cy=(it.from.y+it.to.y)/2,rx=Math.max(1,Math.abs(it.to.x-it.from.x)/2),ry=Math.max(1,Math.abs(it.to.y-it.from.y)/2);return it.shape==='dashed-line'?pointSegmentDistance(p,it.from,it.to)<18:Math.abs(Math.hypot((p.x-cx)/rx,(p.y-cy)/ry)-1)<0.22;}
           if(it.kind==='path')return it.points.some((q,i)=>i===0?Math.hypot(q.x-p.x,q.y-p.y)<18:i>0&&pointSegmentDistance(p,it.points[i-1],q)<12);
           return false;
         });
@@ -356,7 +397,7 @@ export default function TeachingBoard() {
       if(d.mode==='curve'&&it.kind==='diagram'&&it.graphPoints){const dx=p.x-d.offset.x,dy=p.y-d.offset.y;const dataDx=dx/(it.scale||1)/430*settings.graphXMax,dataDy=-dy/(it.scale||1)/220*settings.graphYMax;dragRef.current={...d,offset:p};return {...it,graphPoints:it.graphPoints.map(q=>({x:Math.max(0,Math.min(settings.graphXMax,q.x+dataDx)),y:Math.max(0,Math.min(settings.graphYMax,q.y+dataDy))}))};}
       if('at' in it)return {...it,at:{x:p.x-d.offset.x,y:p.y-d.offset.y}} as BoardItem;
       const dx=p.x-d.offset.x,dy=p.y-d.offset.y;
-      if(it.kind==='line'||it.kind==='arrow')return {...it,from:{x:it.from.x+dx,y:it.from.y+dy},to:{x:it.to.x+dx,y:it.to.y+dy}};
+      if(it.kind==='line'||it.kind==='arrow'||it.kind==='shape')return {...it,from:{x:it.from.x+dx,y:it.from.y+dy},to:{x:it.to.x+dx,y:it.to.y+dy}};
       if(it.kind==='path')return {...it,points:it.points.map(q=>({x:q.x+dx,y:q.y+dy}))};return it;
     }));
     if(d.mode==='move'&&!('at' in (items.find(it=>it.id===d.id)||{} as BoardItem)))dragRef.current={...d,offset:p};
@@ -368,6 +409,7 @@ export default function TeachingBoard() {
     if(tool==='pen'||tool==='eraser')setItems(old=>[...old,{id:uid(),kind:'path',points:[...pts,p],color,width:lineWidth,erase:tool==='eraser'}]);
     else if(tool==='graph'){const all=[...pts,p];const simplified=all.filter((q,i)=>i===0||i===all.length-1||i%Math.max(1,Math.floor(all.length/4))===0);const unique=simplified.length>=2?simplified:[all[0],p];const eq=unique.slice(1).map((q,i)=>{const a=unique[i],dx=q.x-a.x,dy=q.y-a.y;if(Math.abs(dx)<8)return `đoạn ${i+1}: t ≈ ${((a.x+q.x)/2).toFixed(0)} (đứng)`;const m=-dy/dx,b=a.y*-1-m*a.x;const trend=Math.abs(m)<0.08?'ngang':m>0?'xiên tăng':'xiên giảm';return `đoạn ${i+1} (${trend}): s ≈ ${m.toFixed(2)}t ${b>=0?'+':'−'} ${Math.abs(b).toFixed(1)}`;}).join(' ; ');const graphId=uid();setItems(old=>[...old,{id:graphId,kind:'path',points:all,color,width:Math.max(3,lineWidth),erase:false,graph:true},{id:uid(),kind:'text',at:{x:Math.min(...all.map(q=>q.x)),y:Math.min(H-25,Math.max(...all.map(q=>q.y))+28)},text:`Đồ thị vẽ tay — ${eq}`,color,size:16,graphSourceId:graphId}]);setMessage('Đã tạo đồ thị vẽ tay và phương trình xấp xỉ từng đoạn theo tọa độ bảng. Đây là phương trình xấp xỉ trên bảng, chưa tự quy đổi theo thang số vật lý.');}
     else if(tool==='line'||tool==='arrow'){const start=pts[0];setItems(old=>[...old,{id:uid(),kind:tool,from:start,to:p,color,width:lineWidth}]);}
+    else if(['dashed-line','circle','ellipse','triangle','rectangle','cube','cuboid','pyramid','cylinder','cone','sphere'].includes(tool)){const start=pts[0];setItems(old=>[...old,{id:uid(),kind:'shape',shape:tool as Extract<BoardItem,{kind:'shape'}>['shape'],from:start,to:p,color,width:lineWidth}]);}
     setRedoItems([]);setMessage(tool==='eraser'?'Đã tẩy nét.':'Đã ghi lên bảng.');
   };
   const addDiagram=(diagram:Diagram)=>{setItems(old=>[...old,{id:uid(),kind:'diagram',diagram,at:{x:W/2,y:H/2},scale:1}]);setRedoItems([]);setMessage('Đã thêm hình mẫu. Có thể tiếp tục vẽ, ghi chú hoặc xóa bằng công cụ tẩy.');};
@@ -400,7 +442,7 @@ export default function TeachingBoard() {
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
         <section className="min-w-0 overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-lg">
           <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 p-3 sm:p-4">
-            {toolBtn('select','Chọn / di chuyển',Hand)}{toolBtn('pen','Bút viết',Pencil)}{toolBtn('eraser','Tẩy',Eraser)}{toolBtn('line','Đoạn thẳng',Minus)}{toolBtn('arrow','Véc tơ / mũi tên',ArrowUpRight)}<button onClick={combineVectors} className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100" title="Cộng các véc tơ đã vẽ theo thành phần tọa độ">Tổng hợp véc tơ</button>{toolBtn('text','Chữ',Type)}{toolBtn('graph','Đồ thị tay',Pencil)}
+            {toolBtn('select','Chọn / di chuyển',Hand)}{toolBtn('pen','Bút viết',Pencil)}{toolBtn('eraser','Tẩy',Eraser)}{toolBtn('line','Đoạn thẳng',Minus)}{toolBtn('dashed-line','Nét đứt',Minus)}{toolBtn('circle','Hình tròn',Circle)}{toolBtn('ellipse','Hình elip',Circle)}{toolBtn('triangle','Tam giác',Square)}{toolBtn('rectangle','Hình chữ nhật',Square)}{toolBtn('cube','Hình lập phương',Square)}{toolBtn('cuboid','Hình hộp chữ nhật',Square)}{toolBtn('pyramid','Hình chóp',Square)}{toolBtn('cylinder','Hình trụ',Circle)}{toolBtn('cone','Hình nón',Circle)}{toolBtn('sphere','Hình cầu',Circle)}{toolBtn('arrow','Véc tơ / mũi tên',ArrowUpRight)}<button onClick={combineVectors} className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100" title="Cộng các véc tơ đã vẽ theo thành phần tọa độ">Tổng hợp véc tơ</button>{toolBtn('text','Chữ',Type)}{toolBtn('graph','Đồ thị tay',Pencil)}
             <div className="mx-1 hidden h-8 w-px bg-slate-200 sm:block"/><label title="Màu nét" className="flex items-center gap-2 rounded-xl border border-slate-200 px-2 py-1.5 text-xs font-bold">Màu <input type="color" value={color} onChange={e=>setColor(e.target.value)} className="h-7 w-8 cursor-pointer border-0 bg-transparent"/></label>
             <label className="flex min-w-28 items-center gap-2 rounded-xl border border-slate-200 px-2 py-1.5 text-xs font-bold">Nét <input aria-label="Độ dày nét" type="range" min="1" max="14" value={lineWidth} onChange={e=>setLineWidth(Number(e.target.value))} className="w-16 accent-blue-600"/>{lineWidth}</label>
             <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold"><input type="checkbox" checked={grid} onChange={e=>setGrid(e.target.checked)} className="accent-blue-600"/>Lưới</label>
