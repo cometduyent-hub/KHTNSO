@@ -22,7 +22,34 @@ export async function requireStaff(request: Request) {
   return { supabase, user, profile };
 }
 
+/**
+ * Provider-compatible AI gateway.
+ * Existing callers keep using callOpenAI(), so the current application API
+ * and environment variables remain compatible. Set AI_PROVIDER=gemini and
+ * GEMINI_MODEL to select/update a Gemini model without changing routes.
+ */
 export async function callOpenAI(input: string, instructions: string) {
+  const provider = String(process.env.AI_PROVIDER || (process.env.GEMINI_API_KEY && !process.env.OPENAI_API_KEY ? 'gemini' : 'openai')).toLowerCase();
+  if (provider === 'gemini') {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error('GEMINI_NOT_CONFIGURED');
+    const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: instructions }] },
+        contents: [{ role: 'user', parts: [{ text: input }] }],
+        generationConfig: { maxOutputTokens: Number(process.env.OPENAI_MAX_OUTPUT_TOKENS || 2400), temperature: 0.2 }
+      })
+    });
+    const raw = await response.text();
+    if (!response.ok) throw new Error(`GEMINI_HTTP_${response.status}:${raw.slice(0,500)}`);
+    const json = JSON.parse(raw);
+    const outputText = String((json.candidates || []).flatMap((c: any) => c.content?.parts || []).map((part: any) => part.text || '').join('\n')).trim();
+    if (!outputText) throw new Error('GEMINI_EMPTY_RESPONSE');
+    return { text: outputText, response: json, model };
+  }
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error('OPENAI_NOT_CONFIGURED');
   const model = process.env.OPENAI_MODEL || 'gpt-4.1-mini';
@@ -52,11 +79,11 @@ export function parseJsonLoose(text: string): any {
 export function jsonResponse(data: unknown, status = 200) { return Response.json(data, { status }); }
 export function errorResponse(error: unknown) {
   const message = error instanceof Error ? error.message : 'UNKNOWN_ERROR';
-  const map: Record<string, number> = { UNAUTHENTICATED: 401, FORBIDDEN: 403, OPENAI_NOT_CONFIGURED: 503, SUPABASE_NOT_CONFIGURED: 503, AI_INVALID_JSON: 502, OPENAI_EMPTY_RESPONSE: 502 };
-  const status = map[message] || (message.startsWith('OPENAI_HTTP_') ? 502 : 500);
+  const map: Record<string, number> = { UNAUTHENTICATED: 401, FORBIDDEN: 403, OPENAI_NOT_CONFIGURED: 503, GEMINI_NOT_CONFIGURED: 503, SUPABASE_NOT_CONFIGURED: 503, AI_INVALID_JSON: 502, OPENAI_EMPTY_RESPONSE: 502, GEMINI_EMPTY_RESPONSE: 502 };
+  const status = map[message] || (message.startsWith('OPENAI_HTTP_') || message.startsWith('GEMINI_HTTP_') ? 502 : 500);
   return jsonResponse({ ok: false, error: message }, status);
 }
 
 export async function logAi(supabase: any, userId: string, action: string, meta: Record<string, unknown> = {}) {
-  await supabase.from('ai_usage_logs').insert({ user_id: userId, action, model: process.env.OPENAI_MODEL || 'gpt-4.1-mini', metadata: meta });
+  await supabase.from('ai_usage_logs').insert({ user_id: userId, action, model: String(process.env.AI_PROVIDER || (process.env.GEMINI_API_KEY && !process.env.OPENAI_API_KEY ? 'gemini' : 'openai')).toLowerCase() === 'gemini' ? (process.env.GEMINI_MODEL || 'gemini-2.5-flash') : (process.env.OPENAI_MODEL || 'gpt-4.1-mini'), metadata: meta });
 }

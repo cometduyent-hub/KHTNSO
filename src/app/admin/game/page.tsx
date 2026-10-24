@@ -13,15 +13,23 @@ const SUBJECTS = [
   { code: 'MIXED', label: 'Tổng hợp', icon: '🌈' },
 ];
 const normalize = (v: unknown) => String(v ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+function canonicalSubject(value:unknown){
+  const v=normalize(value).replace(/[^a-z0-9]/g,'');
+  if(v.startsWith('khtn')||['physics','chemistry','biology','vatli','vatly','hoahoc','sinhhoc'].includes(v))return 'KHTN';
+  if(v.startsWith('english')||v.startsWith('tienganh')||v.startsWith('anhvan'))return 'ENGLISH';
+  if(v.startsWith('math')||v.startsWith('toan'))return 'MATH';
+  if(v.includes('literature')||v.includes('history')||v.includes('geography')||v.includes('nguvan')||v.includes('lichsu')||v.includes('dialy')||v.includes('vandia'))return 'LITERATURE';
+  if(v==='mixed'||v==='tonghop')return 'MIXED';
+  return v.toUpperCase();
+}
 function subjectMatches(q: Question, subject: string) {
   if (subject === 'MIXED') return true;
-  if (q.subject_code) return normalize(q.subject_code) === normalize(subject);
-  // Backward-compatible fallback for older questions without subject_code.
+  if (q.subject_code) return canonicalSubject(q.subject_code) === canonicalSubject(subject);
   const p = normalize(q.prompt);
   if (subject === 'KHTN') return /vat ly|vat li|hoa hoc|sinh hoc|khoa hoc tu nhien/.test(p);
-  if (subject === 'ENGLISH') return /english|vocabulary|grammar|tiếng anh/.test(p);
+  if (subject === 'ENGLISH') return /english|vocabulary|grammar|tieng anh|anh van/.test(p);
   if (subject === 'MATH') return /toan|math|dai so|hinh hoc/.test(p);
-  if (subject === 'LITERATURE_HISTORY_GEOGRAPHY') return /ngu van|lich su|dia ly|dia li|van hoc|history|geography/.test(p);
+  if (subject === 'LITERATURE') return /ngu van|lich su|dia ly|dia li|van hoc|history|geography/.test(p);
   return false;
 }
 export default function GameAdmin() {
@@ -53,7 +61,7 @@ export default function GameAdmin() {
     if (!profile?.active || !['admin', 'teacher'].includes(profile?.role)) { setRole(''); setMsg('Cần quyền giáo viên hoặc admin.'); setLoading(false); return; }
     const [l, q, c] = await Promise.all([
       supabase.from('game_levels').select('id,level_no,title').order('level_no'),
-      supabase.from('question_bank').select('id,prompt,type,points,lesson_id,subject_code,difficulty').eq('status','published').in('type',['mcq','tf','short']).order('created_at',{ascending:false}).limit(1000),
+      supabase.from('question_bank').select('id,prompt,type,points,lesson_id,subject_code,difficulty').in('status',['published','public']).in('type',['mcq','tf','short']).order('created_at',{ascending:false}).limit(1000),
       supabase.from('game_challenges').select('id,level_id,round_no,title,grade,subject_code,reward_diamonds,status').order('round_no'),
     ]);
     const errors = [l.error, q.error, c.error].filter(Boolean);
@@ -114,7 +122,7 @@ export default function GameAdmin() {
         <p className="text-xs text-slate-500 mt-1">Chỉ hiện câu đã xuất bản, dạng trắc nghiệm/Đúng-Sai/trả lời ngắn, theo môn và độ khó đang chọn. Các câu cũ chưa có mã môn chỉ được nhận diện khi nội dung có từ khóa phù hợp; nên bổ sung mã môn trong ngân hàng.</p>
         <div className="max-h-80 overflow-y-auto border rounded-xl p-2 mt-3 space-y-2">{filtered.map(q=><label className="flex items-start gap-3 p-2 rounded-lg hover:bg-slate-50" key={q.id}><input type="checkbox" className="mt-1" checked={selected.includes(q.id)} onChange={e=>setSelected(a=>e.target.checked?[...a,q.id]:a.filter(id=>id!==q.id))}/><span className="min-w-0"><span className="text-xs bg-slate-100 rounded px-2 py-1">{q.type} · {q.points} điểm · {q.subject_code || 'chưa gắn mã môn'}{q.difficulty ? ` · ${q.difficulty}` : ''}</span><span className="block mt-1 whitespace-pre-wrap">{q.prompt}</span></span></label>)}{filtered.length===0&&<p className="text-slate-500 p-3">Không có câu phù hợp. Hãy xuất bản câu hỏi và kiểm tra mã môn/độ khó trong ngân hàng câu hỏi.</p>}</div>
       </div>
-      <div className="md:col-span-3 flex flex-wrap gap-2"><button className="btn bg-sky-900 text-white" disabled={busy}>{busy?'Đang lưu…':'Tạo và xuất bản vòng'}</button><button type="button" className="btn border" onClick={()=>void load()}>Tải lại</button><a className="btn border" href="/game">Xem phòng chơi</a><a className="btn border" href="/admin/exams">Ngân hàng câu hỏi</a></div>
+      <div className="md:col-span-3 flex flex-wrap gap-2"><button className="btn bg-sky-900 text-white" disabled={busy}>{busy?'Đang lưu…':'Tạo và xuất bản vòng'}</button><button type="button" className="btn border" onClick={()=>void load()}>Tải lại</button><a className="btn border" href="/game">Xem phòng chơi</a><a className="btn border" href="/admin/exams">Ngân hàng câu hỏi</a><a className="btn border" href="/admin/exam-builder">Tạo đề / ma trận</a></div>
       {msg&&<p className="md:col-span-3 text-sm text-sky-900 break-words">{msg}</p>}
     </form>
     <section className="card mt-6"><h2 className="text-2xl font-black">Danh sách vòng ({rows.length})</h2><div className="mt-4 space-y-2">{rows.map(c=><div className="border rounded-xl p-3 flex flex-wrap items-center justify-between gap-3" key={c.id}><div><b>Cấp {levels.find(l=>l.id===c.level_id)?.level_no} · Vòng {c.round_no}: {c.title}</b><p className="text-sm text-slate-500">{SUBJECTS.find(s=>s.code===c.subject_code)?.label || c.subject_code || 'Vòng cũ chưa gắn môn'} · Lớp {c.grade} · 💎 {c.reward_diamonds} · {c.status}</p></div><button className="btn border text-red-700" onClick={()=>void remove(c)}>Xóa</button></div>)}{rows.length===0&&<p className="text-slate-500">Chưa có vòng nào.</p>}</div></section>

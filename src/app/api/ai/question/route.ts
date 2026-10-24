@@ -19,7 +19,7 @@ export async function POST(request: Request) {
         } catch {}
       }
     }
-    const result = await callOpenAI(JSON.stringify(payload) + context, `Bạn là chuyên gia biên soạn câu hỏi KHTN Việt Nam. Tạo đúng ${count} câu hỏi, bám dữ liệu nguồn. Không bịa tên bài hay kiến thức ngoài phạm vi. Trả về JSON thuần là một mảng. Mỗi phần tử có type,prompt,options,answer,points,explanation. type chỉ mcq/tf/short/essay. mcq: options là mảng 4 chuỗi, answer A/B/C/D. tf: prompt phải chứa 4 ý, answer là mảng 4 boolean. short: answer là chuỗi đáp án chấp nhận được. essay: answer có thể là tiêu chí/chấm điểm. Điểm mặc định mcq 0.25, mỗi tf 1 điểm nếu đủ 4 ý, short 0.5, essay 1.0.`);
+    const result = await callOpenAI(JSON.stringify(payload) + context, `Bạn là chuyên gia biên soạn câu hỏi theo môn học và khối lớp được yêu cầu. Ưu tiên đúng subject_code, book_code, grade, bài học và ngữ liệu nguồn; không trộn môn, không bịa tên bài. Tạo đúng ${count} câu, trả JSON thuần là một mảng; mỗi phần tử có type,prompt,options,answer,points,explanation,tf_items. type chỉ mcq/tf/short/essay. mcq: options là mảng 4 chuỗi, answer A/B/C/D. tf: tf_items là mảng đúng 4 phát biểu ngắn; prompt là lời dẫn chung, answer là mảng đúng 4 boolean tương ứng từng ý. Không gộp mất nội dung từng ý vào answer. short: answer là chuỗi đáp án chấp nhận được. essay: answer là đáp án gợi ý/tiêu chí chấm. Điểm mặc định mcq 0.25, tf 1.0 cho cả bốn ý (mỗi ý 0.25), short 0.5, essay 1.0.`);
     const questions = parseJsonLoose(result.text);
     if (!Array.isArray(questions)) throw new Error('AI_INVALID_JSON');
     await logAi(supabase, user.id, 'question_v6', { count, grade: body.grade, lesson_id: body.lesson_id });
