@@ -1,23 +1,18 @@
-# Cập nhật Phòng Thực hành 3D KHTN 7
+# Gói bổ sung Phòng Thực hành 3D KHTN 7
 
-Đây là **bản vá cho website hiện có**, không phải website mới.
+## File trong gói
+- `src/app/practice/khtn7/page.tsx` — trang bổ sung mô phỏng thực hành KHTN 7.
+- `src/app/practice/page.tsx` — thêm một thẻ liên kết từ phòng thực hành đang có; giữ nguyên nội dung chức năng cũ.
+- `docs/THUC_HANH_KHTN7_KNTT.md` — ghi rõ phạm vi SGK và những phần khám phá còn cần bóc tách từng trang.
 
-## Tệp trong gói
+## Cập nhật lên nhánh `main`
+1. Tải ZIP và giải nén.
+2. Mở repository hiện có trên GitHub, chọn nhánh `main`.
+3. Tải lên đúng các đường dẫn tương ứng (ghi đè `src/app/practice/page.tsx` bằng bản trong gói; thêm thư mục `src/app/practice/khtn7/`; thêm tài liệu trong `docs/`).
+4. Commit lên `main`; Vercel sẽ tự triển khai nếu đang liên kết với nhánh này.
+5. Kiểm tra `/practice` và `/practice/khtn7`.
 
-1. `src/app/practice/khtn7/page.tsx` — trang phòng thực hành tương tác 3D và danh mục hoạt động theo số bài SGK.
-2. `src/app/practice/page.tsx` — thêm liên kết từ Phòng Thực hành hiện có sang trang KHTN 7.
-3. `docs/THUC_HANH_KHAM_PHA_KHTN7_KNTT.md` — danh mục, phạm vi và giới hạn xác minh.
+Không sửa `.env`, không thay biến môi trường, không thêm bảng Supabase và không tạo ứng dụng mới. Đây là gói bổ sung; chưa tuyên bố đã triển khai trực tiếp lên GitHub/Vercel.
 
-## Đưa lên GitHub nhánh main
-
-1. Sao lưu hoặc tải ZIP mã nguồn đang triển khai trước khi thay tệp.
-2. Giải nén gói vá; mở thư mục `KHTNSO-main` trong gói.
-3. Chép đúng các tệp theo đường dẫn tương ứng vào repository hiện có, chấp nhận thay thế đúng hai tệp `page.tsx` nêu trên và thêm hai tệp tài liệu.
-4. Commit và push lên nhánh `main`. Vercel sẽ tự triển khai nếu repository đã được liên kết như hiện tại.
-5. Kiểm tra `/practice` và `/practice/khtn7` sau deploy.
-
-Không cần sửa biến môi trường hoặc chạy migration Supabase cho gói này. Mô hình 3D tải Three.js từ CDN nên thiết bị cần có kết nối Internet. Nếu chính sách mạng chặn CDN, vùng mô hình sẽ báo lỗi thay vì âm thầm báo đã tải thành công.
-
-## Giới hạn cần đọc
-
-Năm bài có tiêu đề “Thực hành” được phân biệt rõ. Các hoạt động khám phá còn lại hiện là kịch bản tương tác theo chủ đề, chưa phải bản chép nguyên văn đã kiểm tra từng dòng từ toàn bộ 182 trang quét. Vui lòng đọc `docs/THUC_HANH_KHAM_PHA_KHTN7_KNTT.md` trước khi dùng làm tài liệu chuẩn SGK.
+## Giới hạn quan trọng
+Gói hiện mô phỏng 5 bài mang tiêu đề chính thức “Thực hành” trong mục lục SGK. Các hoạt động “Khám phá” nằm rải rác trong những bài Lý, Hóa, Sinh chưa được xác nhận đầy đủ theo từng trang và chưa nên xem là đã hoàn tất. Cần đối chiếu nội dung/hình từng trang SGK trước khi thêm để không bịa hoặc thay đổi dụng cụ, quy trình.
