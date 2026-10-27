@@ -1,32 +1,23 @@
-# KHTN SỐ — Bổ sung Phòng Thực hành 3D KHTN 7
+# Cập nhật Phòng Thực hành 3D KHTN 7
 
-## Các tệp trong gói
+Đây là **bản vá cho website hiện có**, không phải website mới.
 
-- `src/app/practice/khtn7/page.tsx` — trang mới với 5 bài thực hành có tiêu đề “Thực hành” trong SGK KHTN 7 Kết nối tri thức, theo thứ tự trang sách.
-- `src/app/practice/page.tsx` — chỉ bổ sung thẻ liên kết vào trang hiện có; không thay thế các công cụ báo cáo/lưu Cloud/CSV/PDF và các mô phỏng hiện tại.
-- `docs/THUC_HANH_KHTN7_KNTT.md` — danh mục đối chiếu SGK và phạm vi triển khai.
+## Tệp trong gói
 
-## Cách cập nhật vào nhánh `main`
+1. `src/app/practice/khtn7/page.tsx` — trang phòng thực hành tương tác 3D và danh mục hoạt động theo số bài SGK.
+2. `src/app/practice/page.tsx` — thêm liên kết từ Phòng Thực hành hiện có sang trang KHTN 7.
+3. `docs/THUC_HANH_KHAM_PHA_KHTN7_KNTT.md` — danh mục, phạm vi và giới hạn xác minh.
 
-1. Tạo nhánh dự phòng hoặc tải ZIP hiện tại của repository.
-2. Trên GitHub chọn `main`.
-3. Thêm `src/app/practice/khtn7/page.tsx` đúng đường dẫn.
-4. Mở `src/app/practice/page.tsx` trên bản mới nhất của `main` và chỉ ghép thẻ liên kết có tiêu đề “Phòng Thực hành 3D — KHTN 7”; không thay toàn bộ tệp nếu đã có cập nhật khác.
-5. Thêm `docs/THUC_HANH_KHTN7_KNTT.md` và file README này.
-6. Commit lên `main`, chờ Vercel triển khai.
-7. Kiểm tra `/practice` và `/practice/khtn7` trên máy tính lẫn điện thoại.
+## Đưa lên GitHub nhánh main
 
-## Công nghệ và cấu hình
+1. Sao lưu hoặc tải ZIP mã nguồn đang triển khai trước khi thay tệp.
+2. Giải nén gói vá; mở thư mục `KHTNSO-main` trong gói.
+3. Chép đúng các tệp theo đường dẫn tương ứng vào repository hiện có, chấp nhận thay thế đúng hai tệp `page.tsx` nêu trên và thêm hai tệp tài liệu.
+4. Commit và push lên nhánh `main`. Vercel sẽ tự triển khai nếu repository đã được liên kết như hiện tại.
+5. Kiểm tra `/practice` và `/practice/khtn7` sau deploy.
 
-- Không thêm package, không yêu cầu migration SQL, không thay biến môi trường.
-- Trang tải Three.js r128 và OrbitControls từ CDN; cần kết nối Internet để nạp mô hình 3D.
-- Tương tác bằng chuột/cảm ứng: kéo xoay camera, cuộn/chụm phóng to; các thanh điều khiển thay đổi trạng thái mô phỏng.
-- Phiếu ghi chép xuất ra CSV ở trình duyệt; không tự gửi dữ liệu học sinh lên server.
+Không cần sửa biến môi trường hoặc chạy migration Supabase cho gói này. Mô hình 3D tải Three.js từ CDN nên thiết bị cần có kết nối Internet. Nếu chính sách mạng chặn CDN, vùng mô hình sẽ báo lỗi thay vì âm thầm báo đã tải thành công.
 
-## Kiểm tra
+## Giới hạn cần đọc
 
-Đã chạy script transpile cú pháp TypeScript/JSX của dự án: 72 tệp, 0 lỗi cú pháp. Chưa chạy `next build`, chưa thử trực tiếp trên Vercel. Sau khi deploy, cần xác nhận CDN không bị chặn bởi chính sách mạng/CSP và kiểm tra trên thiết bị thực tế.
-
-## Phạm vi nội dung
-
-Bản đầu tiên bao gồm đủ 5 bài có tiêu đề “Thực hành” theo mục lục SGK: Bài 24, 27, 32, 35, 38. Các hoạt động khám phá/thí nghiệm nằm trong những bài khác được liệt kê trong `docs/THUC_HANH_KHTN7_KNTT.md` như danh mục cần trích xuất tiếp, chưa được tuyên bố là đã mô phỏng đầy đủ.
+Năm bài có tiêu đề “Thực hành” được phân biệt rõ. Các hoạt động khám phá còn lại hiện là kịch bản tương tác theo chủ đề, chưa phải bản chép nguyên văn đã kiểm tra từng dòng từ toàn bộ 182 trang quét. Vui lòng đọc `docs/THUC_HANH_KHAM_PHA_KHTN7_KNTT.md` trước khi dùng làm tài liệu chuẩn SGK.
