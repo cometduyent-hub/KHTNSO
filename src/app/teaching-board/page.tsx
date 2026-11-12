@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import ThreeLearningStudio from '@/components/three/ThreeLearningStudio';
 import {
   ArrowDownRight, ArrowUpRight, BookOpen, Check, ChevronRight, Circle, Download,
   Eraser, FlaskConical, Hand, Minus, MousePointer2, Pencil, Printer, Redo2,
@@ -439,6 +440,7 @@ export default function TeachingBoard() {
         <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-sky-100 bg-white p-3 shadow-sm"><span className="mr-1 text-xs font-bold uppercase tracking-wide text-slate-500">Nền bảng</span><button onClick={()=>setPaper('white')} className={`rounded-lg border px-3 py-2 text-sm font-bold ${paper==='white'?'border-blue-600 bg-blue-50':'border-slate-200'}`}>Trắng</button><button onClick={()=>setPaper('green')} className={`rounded-lg border px-3 py-2 text-sm font-bold ${paper==='green'?'border-emerald-600 bg-emerald-50':'border-slate-200'}`}>Xanh</button><button onClick={()=>setPaper('dark')} className={`rounded-lg border px-3 py-2 text-sm font-bold ${paper==='dark'?'border-slate-700 bg-slate-200':'border-slate-200'}`}>Tối</button></div>
       </div>
       <section className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-sky-100 bg-white p-4 shadow-sm"><label className="text-sm font-black text-slate-700" htmlFor="board-subject">Môn học đang dạy</label><select id="board-subject" value={subjectCode} onChange={e=>setSubjectCode(e.target.value)} className="min-w-[240px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">{boardSubjects.map(s=><option key={s.code} value={s.code}>{s.name}</option>)}</select><span className="text-xs text-slate-500">Công thức và mẫu do Admin xuất bản sẽ lọc theo môn đã chọn.</span><a href="/admin/board-config" className="ml-auto rounded-xl border border-blue-200 px-3 py-2 text-sm font-bold text-blue-800 hover:bg-blue-50">CMS mẫu bảng ↗</a></section>
+      <section className="mb-4"><ThreeLearningStudio mode="geometry" title="Phòng hình học không gian 3D · Xoay và khảo sát khối"/></section>
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
         <section className="min-w-0 overflow-hidden rounded-3xl border border-sky-100 bg-white shadow-lg">
           <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 p-3 sm:p-4">
