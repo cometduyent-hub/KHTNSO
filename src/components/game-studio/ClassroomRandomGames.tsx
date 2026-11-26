@@ -202,7 +202,7 @@ export default function ClassroomRandomGames({ onRosterChange }: { onRosterChang
   function startAnimatedSelection(kind: "race" | "capsule") {
     if (!available.length) { setNotice("Đã gọi hết danh sách. Hãy đặt lại lượt gọi."); return; }
     if (animationTimerRef.current) window.clearTimeout(animationTimerRef.current);
-    const participants = shuffle(available).slice(0, Math.min(kind === "race" ? 5 : 12, available.length));
+    const participants = shuffle(available).slice(0, Math.min(kind === "race" ? 5 : 20, available.length));
     const winner = participants[Math.floor(Math.random() * participants.length)];
     const task = taskChoice === "Tự chọn nhiệm vụ ngẫu nhiên" ? TASKS[Math.floor(Math.random() * TASKS.length)] : taskChoice;
     setPicked([]); setCurrentTask("");
@@ -213,7 +213,7 @@ export default function ClassroomRandomGames({ onRosterChange }: { onRosterChang
       setPicked([winner]); setHistory(h => [...h, winner]); updateCallStats([winner], 1); setCurrentTask(task);
       setPresentation(prev => prev ? { ...prev, phase: "complete" } : prev);
       setNotice(`🎉 ${winner.name} đã được chọn!`); celebrate();
-    }, kind === "race" ? 4200 : 4800);
+    }, kind === "race" ? 5900 : 6500);
   }
 
   function spinWheel() {
