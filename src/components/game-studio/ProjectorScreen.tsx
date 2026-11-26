@@ -19,6 +19,9 @@ export default function ProjectorScreen() {
   const [data, setData] = useState<Snapshot>({});
   const [music, setMusic] = useState(false);
   const [soundReady, setSoundReady] = useState(false);
+  // These values must be initialized before effects read them in dependency arrays.
+  const mode = data.mode || "wheel";
+  const presentation = data.presentation;
   const audioRef = useRef<AudioContext | null>(null);
   const timerRef = useRef<number | null>(null);
   const lastUpdateRef = useRef<number>(0);
@@ -171,10 +174,8 @@ export default function ProjectorScreen() {
     } catch { setSoundReady(false); }
   }
 
-  const mode = data.mode || "wheel";
   const roster = data.roster || [];
   const current = data.picked?.[data.picked.length - 1];
-  const presentation = data.presentation;
   const modeTitle: Record<string, string> = { wheel: "VÒNG QUAY MAY MẮN", gift: "HỘP QUÀ BÍ ẨN", draw: "BỐC THĂM MAY MẮN", teams: "GHÉP ĐỘI TỐC ĐỘ", doors: "Ô CỬA BÍ MẬT", race: "ĐƯỜNG ĐUA THẦN TỐC", capsule: "KHÔNG GIAN BÍ ẨN" };
   const icon: Record<string, string> = { wheel: "🎡", gift: "🎁", draw: "🎟️", teams: "🏁", doors: "🚪", race: "🏎️", capsule: "🪐" };
   const wheelGradient = useMemo(() => {
