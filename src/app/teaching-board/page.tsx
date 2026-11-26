@@ -99,25 +99,30 @@ function drawGeometryShape(ctx: CanvasRenderingContext2D, shape: Extract<BoardIt
     ctx.save();ctx.setLineDash([6,5]);ctx.moveTo(left,top+h-dy);ctx.lineTo(left+w,top+h-dy);ctx.stroke();ctx.restore();
   }
   else if(shape==='cylinder'){
-    // Bán trục elip phụ thuộc đường kính, không phụ thuộc riêng chiều cao hình vẽ.
+    // Vẽ đường bao thấy trước, sau đó mới vẽ nửa elip khuất bằng nét đứt.
     const ry=Math.max(5,Math.min(w*0.16,h*0.18));
     ctx.ellipse(cx,top+ry,w/2,ry,0,0,Math.PI*2);
     ctx.moveTo(left,top+ry);ctx.lineTo(left,top+h-ry);ctx.moveTo(left+w,top+ry);ctx.lineTo(left+w,top+h-ry);
-    ctx.ellipse(cx,top+h-ry,w/2,ry,0,0,Math.PI);
+    ctx.moveTo(left+w,top+h-ry);ctx.ellipse(cx,top+h-ry,w/2,ry,0,0,Math.PI);
+    ctx.stroke();
     ctx.save();ctx.setLineDash([6,5]);ctx.beginPath();ctx.ellipse(cx,top+h-ry,w/2,ry,0,Math.PI,Math.PI*2);ctx.stroke();ctx.restore();
+    ctx.beginPath();
   }
   else if(shape==='cone'){
     const ry=Math.max(5,Math.min(w*0.16,h*0.18));
-    ctx.moveTo(cx,top);ctx.lineTo(left+w,top+h-ry);ctx.ellipse(cx,top+h-ry,w/2,ry,0,0,Math.PI);ctx.moveTo(cx,top);ctx.lineTo(left,top+h-ry);
+    ctx.moveTo(cx,top);ctx.lineTo(left+w,top+h-ry);ctx.ellipse(cx,top+h-ry,w/2,ry,0,0,Math.PI);ctx.lineTo(cx,top);ctx.lineTo(left,top+h-ry);
+    ctx.stroke();
     ctx.save();ctx.setLineDash([6,5]);ctx.beginPath();ctx.ellipse(cx,top+h-ry,w/2,ry,0,Math.PI,Math.PI*2);ctx.stroke();ctx.restore();
+    ctx.beginPath();
   }
   else if(shape==='sphere'){
     // Hình cầu biểu diễn trên mặt phẳng: đường bao tròn + xích đạo thấy/khuất.
-    // Không vẽ thêm kinh tuyến kín gây hiểu nhầm thành các đường giao nhau trên mặt cầu.
     const r=Math.min(w,h)/2, equatorRy=r*0.19;
     ctx.arc(cx,cy,r,0,Math.PI*2);
     ctx.moveTo(cx-r,cy);ctx.ellipse(cx,cy,r,equatorRy,0,0,Math.PI);
+    ctx.stroke();
     ctx.save();ctx.setLineDash([6,5]);ctx.beginPath();ctx.ellipse(cx,cy,r,equatorRy,0,Math.PI,Math.PI*2);ctx.stroke();ctx.restore();
+    ctx.beginPath();
   }
   ctx.stroke(); ctx.restore();
 }

@@ -5,14 +5,15 @@ type P={x:number;y:number};
 type ToolKind="ruler"|"set-square"|"protractor"|"compass";
 const clamp=(n:number,a:number,b:number)=>Math.max(a,Math.min(b,n));
 export default function BoardMeasuringTools({onClose}:{onClose:()=>void}){
- const [kind,setKind]=useState<ToolKind>("ruler"),[pos,setPos]=useState<P>({x:330,y:300}),[angle,setAngle]=useState(0),[scale,setScale]=useState(1),[cmPx,setCmPx]=useState(96),[measure,setMeasure]=useState<{a:P;b:P}|null>(null),[start,setStart]=useState<P|null>(null);
+ const [kind,setKind]=useState<ToolKind>("ruler"),[pos,setPos]=useState<P>({x:330,y:300}),[angle,setAngle]=useState(0),[scale,setScale]=useState(1),[cmPx,setCmPx]=useState(38),[measure,setMeasure]=useState<{a:P;b:P}|null>(null),[circle,setCircle]=useState<{c:P;r:number}|null>(null);
+ const measureRef=useRef<{a:P;b:P}|null>(null);
+ const startRef=useRef<P|null>(null);
  const drag=useRef<{mode:"move"|"measure";last:P}|null>(null);
- const point=(e:React.PointerEvent<SVGSVGElement>):P=>{const r=e.currentTarget.getBoundingClientRect();return{x:(e.clientX-r.left)*1200/r.width,y:(e.clientY-r.top)*700/r.height};};
- const local=(p:P)=>{const a=-angle*Math.PI/180,dx=p.x-pos.x,dy=p.y-pos.y;return{x:(dx*Math.cos(a)-dy*Math.sin(a))/scale,y:(dx*Math.sin(a)+dy*Math.cos(a))/scale};};
+ const point=(e:React.PointerEvent<SVGSVGElement>):P=>{const r=e.currentTarget.getBoundingClientRect();return{x:(e.clientX-r.left)*1200/Math.max(1,r.width),y:(e.clientY-r.top)*700/Math.max(1,r.height)};};
  const measured=measure?Math.hypot(measure.b.x-measure.a.x,measure.b.y-measure.a.y)/cmPx:0;
- const down=(e:React.PointerEvent<SVGSVGElement>)=>{const p=point(e);const el=e.target as Element;if(el.closest("[data-tool-body]")){drag.current={mode:"move",last:p};}else{drag.current={mode:"measure",last:p};setStart(p);setMeasure({a:p,b:p});}e.currentTarget.setPointerCapture(e.pointerId);};
- const move=(e:React.PointerEvent<SVGSVGElement>)=>{if(!drag.current)return;const p=point(e);if(drag.current.mode==="move"){const d=drag.current;setPos(v=>({x:v.x+p.x-d.last.x,y:v.y+p.y-d.last.y}));drag.current.last=p;}else if(start)setMeasure({a:start,b:p});};
- const up=()=>{if(kind==="compass"&&measure){setCircle({c:measure.a,r:Math.hypot(measure.b.x-measure.a.x,measure.b.y-measure.a.y)});}drag.current=null;setStart(null);};
+ const down=(e:React.PointerEvent<SVGSVGElement>)=>{if(e.button!==0)return;const p=point(e);const el=e.target as Element;if(el.closest("[data-tool-body]")){drag.current={mode:"move",last:p};}else{drag.current={mode:"measure",last:p};startRef.current=p;measureRef.current={a:p,b:p};setMeasure({a:p,b:p});}try{e.currentTarget.setPointerCapture(e.pointerId);}catch{/* Pointer capture may be unavailable on some touch browsers. */}};
+ const move=(e:React.PointerEvent<SVGSVGElement>)=>{if(!drag.current)return;const p=point(e);if(drag.current.mode==="move"){const d=drag.current;setPos(v=>({x:v.x+p.x-d.last.x,y:v.y+p.y-d.last.y}));drag.current.last=p;}else if(startRef.current){const next={a:startRef.current,b:p};measureRef.current=next;setMeasure(next);}};
+ const up=()=>{const current=measureRef.current;if(kind==="compass"&&current){setCircle({c:current.a,r:Math.hypot(current.b.x-current.a.x,current.b.y-current.a.y)});setMeasure(null);}drag.current=null;startRef.current=null;measureRef.current=null;};
  const rotate=(d:number)=>setAngle(v=>(v+d+360)%360);
  return <div className="absolute inset-0 z-30" style={{touchAction:"none"}}>
   <div className="absolute left-2 top-2 z-40 flex max-w-[calc(100%-1rem)] flex-wrap items-center gap-1 rounded-xl border border-amber-300 bg-white/95 p-2 shadow-xl">
@@ -23,7 +24,7 @@ export default function BoardMeasuringTools({onClose}:{onClose:()=>void}){
    <button onClick={()=>{setMeasure(null);setCircle(null);setPos({x:330,y:300});setAngle(0);setScale(1)}} className="rounded-lg bg-slate-100 px-2 py-1.5 text-xs">Đặt lại</button>
    <button onClick={onClose} className="rounded-lg bg-rose-600 px-2 py-1.5 text-xs font-bold text-white">Đóng dụng cụ</button>
   </div>
-  <svg viewBox="0 0 1200 700" preserveAspectRatio="none" className="h-full w-full" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
+  <svg viewBox="0 0 1200 700" preserveAspectRatio="none" className="h-full w-full" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onLostPointerCapture={up}>
    <g transform={`translate(${pos.x} ${pos.y}) rotate(${angle}) scale(${scale})`} data-tool-body style={{cursor:"move"}}>
     {kind==="ruler"&&<g data-tool-body><rect x="-250" y="-25" width="500" height="50" rx="5" fill="#fef3c7" fillOpacity=".88" stroke="#b45309" strokeWidth="2"/>{Array.from({length:51},(_,i)=><g key={i}><line x1={-240+i*9.6} x2={-240+i*9.6} y1="-25" y2={i%10===0?12:i%5===0?3:-9} stroke="#78350f" strokeWidth={i%10===0?2:1}/>{i%10===0&&<text x={-240+i*9.6+2} y="22" fontSize="11" fill="#78350f">{i/10}</text>}</g>)}</g>}
     {kind==="set-square"&&<g data-tool-body><path d="M-180 150 L-180 -150 L180 150 Z" fill="#bae6fd" fillOpacity=".72" stroke="#0369a1" strokeWidth="3"/><path d="M-145 110 L-145 -90 L95 110 Z" fill="none" stroke="#0284c7" strokeWidth="1.5" strokeDasharray="5 4"/><path d="M-180 115 L-145 115 L-145 150" fill="none" stroke="#075985" strokeWidth="2"/></g>}
