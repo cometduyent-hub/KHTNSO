@@ -12,14 +12,16 @@ export default function BoardMeasuringTools({onClose}:{onClose:()=>void}){
  const [mode,setMode]=useState<Mode>("move"),[measure,setMeasure]=useState<{a:P;b:P}|null>(null),[circle,setCircle]=useState<{c:P;r:number}|null>(null),[radius,setRadius]=useState(130);
  const [anglePts,setAnglePts]=useState<P[]>([]),[smartLine,setSmartLine]=useState<{a:P;b:P;kind:"parallel"|"perpendicular"}|null>(null),[preview,setPreview]=useState<P|null>(null);
  const [compassAnchor,setCompassAnchor]=useState<P|null>(null);
- const [inkLines,setInkLines]=useState<Array<{a:P;b:P;kind:"ruler"|"set-square"}>>([]);
+ const [inkLines,setInkLines]=useState<Array<{a:P;b:P;kind:"ruler"|"set-square"}>>([]),[selectedInk,setSelectedInk]=useState<number|null>(null);
  const measureRef=useRef<{a:P;b:P}|null>(null),startRef=useRef<P|null>(null);
- const drag=useRef<{mode:"move"|"rotate"|"measure";last:P;startAngle?:number;pointerAngle?:number}|null>(null);
+ const drag=useRef<{mode:"move"|"rotate"|"measure"|"ink";last:P;startAngle?:number;pointerAngle?:number;inkIndex?:number}|null>(null);
  const point=(e:React.PointerEvent<SVGSVGElement>):P=>{const r=e.currentTarget.getBoundingClientRect();return{x:(e.clientX-r.left)*1200/Math.max(1,r.width),y:(e.clientY-r.top)*700/Math.max(1,r.height)};};
  const measured=measure?dist(measure.a,measure.b)/cmPx:0;
  const down=(e:React.PointerEvent<SVGSVGElement>)=>{
   if(e.button!==0)return;const p=point(e),el=e.target as Element;
-  if(el.closest("[data-tool-rotate]")){const pointerAngle=Math.atan2(p.y-pos.y,p.x-pos.x)*180/Math.PI;drag.current={mode:"rotate",last:p,startAngle:angle,pointerAngle};}
+  const inkTarget=el.closest("[data-ink-index]");
+  if(inkTarget){const idx=Number(inkTarget.getAttribute("data-ink-index"));if(Number.isInteger(idx)&&inkLines[idx]){setSelectedInk(idx);drag.current={mode:"ink",last:p,inkIndex:idx};}}
+  else if(el.closest("[data-tool-rotate]")){const pointerAngle=Math.atan2(p.y-pos.y,p.x-pos.x)*180/Math.PI;drag.current={mode:"rotate",last:p,startAngle:angle,pointerAngle};}
   else if(el.closest("[data-tool-body]")){drag.current={mode:"move",last:p};}
   else if(mode==="angle") {const pts=anglePts.length>=3?[p]:[...anglePts,p];setAnglePts(pts);setPreview(null);}
   else if(mode==="parallel"||mode==="perpendicular") {if(!smartLine){startRef.current=p;setPreview(p);drag.current={mode:"measure",last:p};}else{startRef.current=p;setPreview(p);drag.current={mode:"measure",last:p};}}
@@ -28,7 +30,8 @@ export default function BoardMeasuringTools({onClose}:{onClose:()=>void}){
   try{e.currentTarget.setPointerCapture(e.pointerId);}catch{/* Pointer capture may be unavailable on some touch browsers. */}
  };
  const move=(e:React.PointerEvent<SVGSVGElement>)=>{const p=point(e);if(mode==="compass"&&compassAnchor){setPreview(p);return;}if(mode==="angle"&&anglePts.length>0){setPreview(p);return;}if(!drag.current)return;
-  if(drag.current.mode==="move"){const d=drag.current;setPos(v=>({x:clamp(v.x+p.x-d.last.x,0,1200),y:clamp(v.y+p.y-d.last.y,0,700)}));drag.current.last=p;}
+  if(drag.current.mode==="ink"&&drag.current.inkIndex!==undefined){const idx=drag.current.inkIndex,dx=p.x-drag.current.last.x,dy=p.y-drag.current.last.y;setInkLines(v=>v.map((ln,i)=>i===idx?{...ln,a:{x:ln.a.x+dx,y:ln.a.y+dy},b:{x:ln.b.x+dx,y:ln.b.y+dy}}:ln));drag.current.last=p;}
+  else if(drag.current.mode==="move"){const d=drag.current;setPos(v=>({x:clamp(v.x+p.x-d.last.x,0,1200),y:clamp(v.y+p.y-d.last.y,0,700)}));drag.current.last=p;}
   else if(drag.current.mode==="rotate"){const d=drag.current;const current=Math.atan2(p.y-pos.y,p.x-pos.x)*180/Math.PI;setAngle((((d.startAngle||0)+current-(d.pointerAngle||0))%360+360)%360);}
   else if(startRef.current){if(mode==="parallel"||mode==="perpendicular")setPreview(p);else if(mode==="draw"){
     const rad=-angle*Math.PI/180,dx=p.x-pos.x,dy=p.y-pos.y;
@@ -57,7 +60,7 @@ export default function BoardMeasuringTools({onClose}:{onClose:()=>void}){
    <button onClick={()=>rotate(-5)} className="rounded-lg bg-slate-100 px-2 py-1.5 text-xs font-bold">↶ 5°</button><button onClick={()=>rotate(5)} className="rounded-lg bg-slate-100 px-2 py-1.5 text-xs font-bold">↷ 5°</button>
    <label className="flex items-center gap-1 text-xs">Kích thước <input type="range" min=".55" max="1.8" step=".05" value={scale} onChange={e=>setScale(+e.target.value)} className="w-16"/></label>
    <label className="flex items-center gap-1 text-xs">px/cm <input type="number" min="5" max="200" value={cmPx} onChange={e=>setCmPx(clamp(+e.target.value||32,5,200))} className="w-14 rounded border px-1 py-1"/></label>
-   <button onClick={()=>{setMeasure(null);setCircle(null);setSmartLine(null);setAnglePts([]);setInkLines([]);setCompassAnchor(null);setPreview(null);setPos({x:330,y:300});setAngle(0);setScale(1);setMode("move")}} className="rounded-lg bg-slate-100 px-2 py-1.5 text-xs">Xóa / Đặt lại</button>
+   <button onClick={()=>{if(selectedInk!==null){setInkLines(v=>v.filter((_,i)=>i!==selectedInk));setSelectedInk(null);}else{setMeasure(null);setCircle(null);setSmartLine(null);setAnglePts([]);setInkLines([]);setCompassAnchor(null);setPreview(null);setPos({x:330,y:300});setAngle(0);setScale(1);setMode("move");setSelectedInk(null)}}} className="rounded-lg bg-slate-100 px-2 py-1.5 text-xs">Xóa nét chọn / Đặt lại</button>
    <button onClick={onClose} className="rounded-lg bg-rose-600 px-2 py-1.5 text-xs font-bold text-white">Đóng dụng cụ</button>
   </div>
   <svg viewBox="0 0 1200 700" preserveAspectRatio="none" className="h-full w-full" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onLostPointerCapture={up}>
@@ -69,14 +72,14 @@ export default function BoardMeasuringTools({onClose}:{onClose:()=>void}){
     <circle data-tool-body cx="0" cy="0" r="8" fill="#f97316" stroke="white" strokeWidth="2"/>
     <g data-tool-rotate style={{cursor:"grab"}}><line x1="0" y1="-188" x2="0" y2="-226" stroke="#7c3aed" strokeWidth="3" strokeDasharray="4 3" pointerEvents="none"/><circle cx="0" cy="-238" r="17" fill="#7c3aed" stroke="white" strokeWidth="3"/><path d="M-7 -240 A8 8 0 1 1 4 -231 M4 -231 L4 -238 M4 -231 L-3 -232" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" pointerEvents="none"/><title>Kéo núm tím để xoay dụng cụ tự do</title></g>
    </g>
-   {inkLines.map((ln,i)=><g key={`ink-${i}`}><line x1={ln.a.x} y1={ln.a.y} x2={ln.b.x} y2={ln.b.y} stroke="#1d4ed8" strokeWidth="3" strokeLinecap="round"/><circle cx={ln.a.x} cy={ln.a.y} r="2.5" fill="#1d4ed8"/><circle cx={ln.b.x} cy={ln.b.y} r="2.5" fill="#1d4ed8"/></g>)}
+   {inkLines.map((ln,i)=><g key={`ink-${i}`} data-ink-index={i} style={{cursor:"move"}}><line x1={ln.a.x} y1={ln.a.y} x2={ln.b.x} y2={ln.b.y} stroke={selectedInk===i?"#ea580c":"#1d4ed8"} strokeWidth={selectedInk===i?7:3} strokeLinecap="round"/><line x1={ln.a.x} y1={ln.a.y} x2={ln.b.x} y2={ln.b.y} stroke="transparent" strokeWidth="18"/><circle cx={ln.a.x} cy={ln.a.y} r="4" fill={selectedInk===i?"#ea580c":"#1d4ed8"}/><circle cx={ln.b.x} cy={ln.b.y} r="4" fill={selectedInk===i?"#ea580c":"#1d4ed8"}/></g>)}
    {measure&&<g><line x1={measure.a.x} y1={measure.a.y} x2={measure.b.x} y2={measure.b.y} stroke="#dc2626" strokeWidth="3" strokeDasharray="8 5"/><circle cx={measure.a.x} cy={measure.a.y} r="5" fill="#dc2626"/><circle cx={measure.b.x} cy={measure.b.y} r="5" fill="#dc2626"/><rect x={(measure.a.x+measure.b.x)/2-62} y={(measure.a.y+measure.b.y)/2-28} width="124" height="24" rx="6" fill="white" stroke="#dc2626"/><text x={(measure.a.x+measure.b.x)/2} y={(measure.a.y+measure.b.y)/2-11} fontSize="15" fontWeight="bold" textAnchor="middle" fill="#991b1b">{measured.toFixed(2)} cm</text></g>}
    {circle&&<g><circle cx={circle.c.x} cy={circle.c.y} r={circle.r} fill="none" stroke="#0f766e" strokeWidth="3"/><line x1={circle.c.x} y1={circle.c.y} x2={circle.c.x+circle.r} y2={circle.c.y} stroke="#0f766e" strokeWidth="2" strokeDasharray="5 4"/><circle cx={circle.c.x} cy={circle.c.y} r="5" fill="#0f766e"/><text x={circle.c.x+circle.r/2} y={circle.c.y-10} fontSize="14" fill="#115e59" fontWeight="bold">r = {(circle.r/cmPx).toFixed(2)} cm</text></g>}
    {compassAnchor&&preview&&<circle cx={compassAnchor.x} cy={compassAnchor.y} r={dist(compassAnchor,preview)} fill="none" stroke="#0f766e" strokeWidth="2" strokeDasharray="6 4"/>}
    {smartLine&&<g><line x1={smartLine.a.x} y1={smartLine.a.y} x2={smartLine.b.x} y2={smartLine.b.y} stroke="#2563eb" strokeWidth="3"/><text x={smartLine.a.x+8} y={smartLine.a.y-10} fontSize="14" fill="#1d4ed8" fontWeight="bold">{smartLine.kind==="parallel"?"Đường song song":"Đường vuông góc"}</text></g>}
    {anglePts.length>0&&<g>{anglePts.map((p,i)=><circle key={i} cx={p.x} cy={p.y} r="5" fill="#be185d"/>)}{anglePts.length>=2&&<line x1={anglePts[1].x} y1={anglePts[1].y} x2={anglePts[0].x} y2={anglePts[0].y} stroke="#be185d" strokeWidth="2"/>}{preview&&<line x1={anglePts[1]?.x??anglePts[0].x} y1={anglePts[1]?.y??anglePts[0].y} x2={preview.x} y2={preview.y} stroke="#be185d" strokeWidth="2" strokeDasharray="5 4"/>}{anglePts.length===2&&preview&&<text x={anglePts[1].x+12} y={anglePts[1].y-12} fontSize="15" fill="#9d174d" fontWeight="bold">{angleAt(anglePts[0],anglePts[1],preview).toFixed(1)}°</text>}{anglePts.length===3&&<><line x1={anglePts[1].x} y1={anglePts[1].y} x2={anglePts[2].x} y2={anglePts[2].y} stroke="#be185d" strokeWidth="2"/><text x={anglePts[1].x+12} y={anglePts[1].y-14} fontSize="16" fill="#9d174d" fontWeight="bold">{angleAt(anglePts[0],anglePts[1],anglePts[2]).toFixed(1)}°</text></>}</g>}
   </svg>
-  <div className="absolute bottom-2 left-2 max-w-[min(850px,calc(100%-1rem))] rounded-lg bg-white/95 px-3 py-2 text-xs text-slate-700 shadow">Chế độ: <b>{modeLabel[mode]}</b> · Kéo thân dụng cụ để di chuyển tự do đến vị trí đo, núm tím để xoay. Chọn Vẽ theo cạnh để tạo nét độc lập theo cạnh thước/ê-ke; nét đã vẽ không di chuyển theo dụng cụ. Ê-ke: chọn Song song/Vuông góc, kéo đoạn tham chiếu rồi kéo điểm đặt đường mới. Thước đo góc: chọn Đo góc 3 điểm, chạm đỉnh rồi chạm hai điểm trên hai tia. Compa: chọn Đặt kim/Vẽ, chạm tâm rồi chạm vị trí chân bút. Các kết quả có thể xóa/đặt lại.</div>
+  <div className="absolute bottom-2 left-2 max-w-[min(850px,calc(100%-1rem))] rounded-lg bg-white/95 px-3 py-2 text-xs text-slate-700 shadow">Chế độ: <b>{modeLabel[mode]}</b> · Kéo thân dụng cụ để di chuyển tự do đến vị trí đo, núm tím để xoay. Chọn Vẽ theo cạnh để tạo nét độc lập theo cạnh thước/ê-ke; nét đã vẽ độc lập với dụng cụ; bấm chọn nét để kéo di chuyển riêng, nút Xóa nét chọn để xóa nét đang chọn. Ê-ke: chọn Song song/Vuông góc, kéo đoạn tham chiếu rồi kéo điểm đặt đường mới. Thước đo góc: chọn Đo góc 3 điểm, chạm đỉnh rồi chạm hai điểm trên hai tia. Compa: chọn Đặt kim/Vẽ, chạm tâm rồi chạm vị trí chân bút. Các kết quả có thể xóa/đặt lại.</div>
  </div>;
 }
 
