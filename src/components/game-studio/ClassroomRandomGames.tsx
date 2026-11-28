@@ -26,7 +26,7 @@ function uniqueStudents(list: Student[]) { const seen = new Set<string>(); retur
 function readHeader(row: Record<string, unknown>, candidates: string[]) { const keys = Object.keys(row); const found = keys.find(k => candidates.includes(norm(k).replace(/[ _-]/g, ""))); return found ? row[found] : undefined; }
 function piePath(cx: number, cy: number, r: number, start: number, end: number) { if (end - start >= 359.9) return `M ${cx} ${cy-r} A ${r} ${r} 0 1 1 ${cx} ${cy+r} A ${r} ${r} 0 1 1 ${cx} ${cy-r} Z`; const rad = (d: number) => (d - 90) * Math.PI / 180; const x1 = cx + r * Math.cos(rad(start)), y1 = cy + r * Math.sin(rad(start)); const x2 = cx + r * Math.cos(rad(end)), y2 = cy + r * Math.sin(rad(end)); const large = end - start > 180 ? 1 : 0; return `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`; }
 
-export default function ClassroomRandomGames({ onRosterChange, initialMode, initialTask, initialRoster }: { onRosterChange?: (students: Student[]) => void; initialMode?: GameMode; initialTask?: string; initialRoster?: Array<{ id?: string; name: string; code?: string }>; initialRosterLabel?: string }) {
+export default function ClassroomRandomGames({ onRosterChange, initialMode, initialTask, initialRoster, initialRosterLabel }: { onRosterChange?: (students: Student[]) => void; initialMode?: GameMode; initialTask?: string; initialRoster?: Array<{ id?: string; name: string; code?: string }>; initialRosterLabel?: string }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [classes, setClasses] = useState<ClassRow[]>([]);
   const [classId, setClassId] = useState("");
