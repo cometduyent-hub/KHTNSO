@@ -213,7 +213,7 @@ export default function ClassroomRandomGames({ onRosterChange }: { onRosterChang
       setPicked([winner]); setHistory(h => [...h, winner]); updateCallStats([winner], 1); setCurrentTask(task);
       setPresentation(prev => prev ? { ...prev, phase: "complete" } : prev);
       setNotice(`🎉 ${winner.name} đã được chọn!`); celebrate();
-    }, kind === "race" ? 5900 : 6500);
+    }, kind === "race" ? 7900 : 6500);
   }
 
   function spinWheel() {
